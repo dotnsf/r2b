@@ -51,7 +51,7 @@ R2B supports simple CRUD API for User. It also support Creating API for Item, an
 
     - `$ cd **/r2b/api`
 
-    - `$ composer card import --file admin@r2b-network.card`
+    - `$ composer card import --file cards/admin@r2b-network.card`
 
 - (Everytime after starting Hyperledger Fabric)Install r2b-network runtime
 
