@@ -1,0 +1,636 @@
+swagger: '2.0'
+info:
+  description: R2B(Record to Blockchain) on Hyperledger Fabric API Document
+  version: 0.0.1
+  title: R2B(Record to Blockchain) Platform on Hyperledger Fabric REST API
+host: localhost:3001
+basePath: /
+tags:
+  - name: user
+    description: APIs for User
+  - name: item
+    description: APIs for Item
+  - name: trade
+    description: Trading API
+schemes:
+  - http
+  - https
+paths:
+  /api/adminuser:
+    post:
+      tags:
+        - user
+      summary: Create Administrator user
+      description: Create special user(admin) who has administrative role. Need to be executed once.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/AdminUserRequest'
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Already executed
+        '500':
+          description: Server Error
+  /api/login:
+    post:
+      tags:
+        - user
+      summary: User authentication
+      description: Authenticate with id and password. Use token, which can be retrieved from response of this API, for other APIs.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/LoginRequest'
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/LoginResult'
+        '401':
+          description: Fail
+  /api/user:
+    get:
+      tags:
+        - user
+      summary: Get a user
+      description: Get single user information from id.
+      parameters:
+        - name: id
+          type: string
+          in: query
+          description: id of user
+          required: true
+        - name: token
+          type: string
+          in: query
+          description: token which is retrieved from response of login API.
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/UserResult'
+        '401':
+          description: Login error
+        '404':
+          description: Failed to find user.
+        '500':
+          description: Server error
+    post:
+      tags:
+        - user
+      summary: Create/Update user
+      description: Create new user, or Update existing user information
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/UserRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+    delete:
+      tags:
+        - user
+      summary: Delete user
+      description: Delete specified user.
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/UserIdRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '404':
+          description: Failed to find user
+        '500':
+          description: Server error
+  /api/users:
+    get:
+      tags:
+        - user
+      summary: Get users
+      description: Get multiple users information which can be retrieved from currrent token.
+      produces:
+        - application/json
+      parameters:
+        - name: token
+          type: string
+          in: query
+          description: token which is retrieved from response of login API.
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+  /api/queryUsers:
+    post:
+      tags:
+        - user
+      summary: Query users
+      description: Query multiple users information which can be retrieved from currrent token.
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/QueryRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+  /api/item:
+    get:
+      tags:
+        - item
+      summary: Get an item
+      description: Get single item information from id.
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          type: string
+          in: query
+          description: Item ID
+          required: true
+        - name: token
+          type: string
+          in: query
+          description: token which is retrieved from response of login API.
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '404':
+          description: Failed to find item
+        '500':
+          description: Server error
+    post:
+      tags:
+        - item
+      summary: Create/Update item
+      description: Create new item, or Update existing item information
+      produces:
+        - application/json
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: data
+          in: formData
+          type: file
+          required: true
+          description: file
+        - name: file_modified
+          in: formData
+          type: integer
+          required: true
+          description: timestamp of original file
+        - name: file_name
+          in: formData
+          type: string
+          required: true
+          description: name of original file
+        - name: token
+          in: formData
+          type: string
+          required: true
+          description: token which is retrieved from response of login API.
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+    delete:
+      tags:
+        - item
+      summary: Delete item
+      description: Delete specified item.
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/ItemIdRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '404':
+          description: Failed to find item
+        '500':
+          description: Server error
+  /api/itemCheck:
+    post:
+      tags:
+        - item
+      summary: Check item
+      description: Check item if existing or not
+      produces:
+        - application/json
+      parameters:
+        - name: data
+          in: formData
+          type: file
+          required: true
+          description: file
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+  /api/items:
+    get:
+      tags:
+        - item
+      summary: Get items
+      description: Get multiple items information which can be retrieved from currrent token.
+      produces:
+        - application/json
+      parameters:
+        - name: token
+          type: string
+          in: query
+          description: token which is retrieved from response of login API.
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+  /api/trade:
+    post:
+      tags:
+        - trade
+      summary: Change item owner
+      description: Change item owner. Split item with new owner if needed.
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/TradeRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+definitions:
+  AdminUserRequest:
+    type: object
+    properties:
+      password:
+        type: string
+        format: password
+  LoginRequest:
+    type: object
+    properties:
+      id:
+        type: string
+        format: string
+      password:
+        type: string
+        format: password
+  UserRequest:
+    type: object
+    properties:
+      id:
+        type: string
+        description: User ID
+      password:
+        type: string
+        description: User Password
+      name:
+        type: string
+        description: User name
+      type:
+        type: string
+        description: User type
+      email:
+        type: array
+        items:
+          type: string
+        description: User emails
+      role:
+        type: integer
+        description: User role(0:admin, 1:user)
+  UserRequestToken:
+    type: object
+    properties:
+      id:
+        type: string
+        description: User ID
+      password:
+        type: string
+        description: User Password
+      name:
+        type: string
+        description: User name
+      type:
+        type: string
+        description: User type
+      email:
+        type: array
+        items:
+          type: string
+        description: User emails
+      role:
+        type: integer
+        description: User role(0:admin, 1:user)
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  UsersRequest:
+    type: array
+    items:
+      $ref: '#/definitions/UserRequest'
+  UserIdRequest:
+    type: object
+    properties:
+      id:
+        type: string
+        description: User ID
+  UserIdRequestToken:
+    type: object
+    properties:
+      id:
+        type: string
+        description: User ID
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  UserEmailRequest:
+    type: object
+    properties:
+      id:
+        type: string
+        description: User Email
+  ItemRequest:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Item ID
+      name:
+        type: string
+        description: Item name
+      body:
+        type: string
+        description: Item body
+      amount:
+        type: integer
+        description: Item amount
+  ItemRequestToken:
+    requestBody:
+      content:
+        multipart/form-data:
+          schema:
+            properties:
+              file_name:
+                type: string
+                description: file name
+              file_modified:
+                type: integer
+                description: file last modified datetime
+              data:
+                type: string
+                format: binary
+              token:
+                type: string
+                description: token which is retrieved from response of login API.
+  ItemCheckRequest:
+    requestBody:
+      content:
+        multipart/form-data:
+          schema:
+            properties:
+              data:
+                type: string
+                format: binary
+  ItemForBorrowRequestToken:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Item ID
+      name:
+        type: string
+        description: Item name
+      body:
+        type: string
+        description: Item body
+      amount:
+        type: integer
+        description: Item amount
+      owner_id:
+        type: string
+        description: User ID for rent
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  ItemsRequest:
+    type: array
+    items:
+      $ref: '#/definitions/ItemRequest'
+  ItemIdRequest:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Item ID
+  ItemIdRequestToken:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Item ID
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  TradeRequestToken:
+    type: object
+    properties:
+      item_id:
+        type: string
+        description: Item ID
+      user_id:
+        type: string
+        description: User ID for new owner
+      amount:
+        type: integer
+        description: Split amount from Item
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  MergeRequestToken:
+    type: object
+    properties:
+      item1_id:
+        type: string
+        description: Item1 ID
+      item2_id:
+        type: string
+        description: Item2 ID
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  SettleRequestToken:
+    type: object
+    properties:
+      item_id:
+        type: string
+        description: Item ID
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  QueryItemsByAttrRequestToken:
+    type: object
+    properties:
+      type:
+        type: string
+        description: Item type
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  QueryRequestToken:
+    type: object
+    properties:
+      keyword:
+        type: string
+        description: Query keyword
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  TicketRequestToken:
+    type: object
+    properties:
+      item_id:
+        type: string
+        description: Item ID
+      user_id:
+        type: string
+        description: Ticket target user id
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  TicketIdRequestToken:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Ticket ID
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  TicketReplyRequestToken:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Ticket ID
+      result:
+        type: string
+        description: Result for request('accept' or 'deny')
+      amount:
+        type: integer
+        description: Request amount
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
+  LoginResult:
+    type: object
+    properties:
+      status:
+        type: boolean
+        description: 'true: success, false: failed'
+      token:
+        type: string
+        format: string
+        description: token which is going to be used in other APIs.
+      message:
+        type: string
+        format: string
+        description: error message
+  UserResult:
+    type: object
+    properties:
+      id:
+        type: string
+        description: User ID
+      name:
+        type: string
+        description: User name
+      role:
+        type: integer
+        description: User role(0:admin, 1:user)
+  ItemResult:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Item ID
+      name:
+        type: string
+        description: Item name
+      body:
+        type: string
+        description: Item body
+      amount:
+        type: integer
+        description: Item amount
+      user_id:
+        type: string
+        description: User ID for owner
+      datetime:
+        type: string
+        description: datetime
+  UserIdResult:
+    type: object
+    properties:
+      id:
+        type: string
+        description: User ID
+  ItemIdResult:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Item ID

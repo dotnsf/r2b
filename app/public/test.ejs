@@ -1,0 +1,156 @@
+<%- include('./header', {}) %>
+
+<title><%= __('orders.head.title') %></title>
+<style>
+tr{
+  cursor: pointer;
+}
+tr:hover{
+  background: #ccc
+}
+</style>
+
+<script>
+$(function(){
+  getOrders();
+});
+
+function getOrders(){
+  $.ajax({
+    type: 'GET',
+    url: '/orders',
+    success: function( orders ){
+      //orders = JSON.parse( orders );
+      //console.log( orders );
+      orders.forEach( order => {
+        var tr = "<tr data-href='/order/" + order.id + "'><td>" + order.id
+          + "</td><td>" + abbreviateArray( order.item_id )
+          + "</td><td>" + abbreviateArray( order.user_id )
+          + "</td><td>" + abbreviateArray( order.vip_id )
+          + "</td><td>" + abbreviateArray( order.locker_id )
+          + "</td><td>" + order.body
+          + "</td><td>" + order.datetime + "</td>";
+
+<% if ( user.role == 0 ){ %>
+        tr += ( "<td>"
+          + "<input type='button' value='<%= __('orders.buttonlabel.edit') %>' class='btn btn-success' onClick='editOrder(" + JSON.stringify(order) + ")'>"
+          + "<input type='button' class='btn btn-warning' value='<%= __('orders.buttonlabel.delete') %>' onClick='deleteOrder(\"" + order.id + "\")'/>"
+          + "</td>" );
+<% } %>
+        tr += "</tr>";
+        $('#orders_table_tbody').append( tr );
+      });
+<% if ( user.role == 0 ){ %>
+  /*
+      var tr = "<tr><td><input type='text' id='order_id' placeholder='<%= __('orders.placeholder.id') %>'/></td>"
+        + "<td><input type='text' id='order_item_id' placeholder='<%= __('orders.placeholder.item_id') %>' value='[]'/></td>"
+        + "<td><input type='text' id='order_user_id' placeholder='<%= __('orders.placeholder.user_id') %>' value='[,,,]'/></td>"
+        + "<td><input type='text' id='order_vip_id' placeholder='<%= __('orders.placeholder.vip_id') %>' value='[]'/></td>"
+        + "<td><input type='text' id='order_locker_id' placeholder='<%= __('orders.placeholder.locker_id') %>' value='[]'/></td>"
+        + "<td><input type='text' id='order_body' placeholder='<%= __('orders.placeholder.body') %>'/></td>"
+        + "<td><input type='text' id='order_datetime' placeholder='<%= __('orders.placeholder.datetime') %>'/></td>"
+        + "<td><input type='button' class='btn btn-primary' value='<%= __('orders.buttonlabel.add') %>' onClick='addOrder();'/></td></tr>"
+        */
+      var json_sample = '{\n "id": "",\n "user_id": ["","",""],\n "datetime": "",\n "body": "",\n "lockers": [\n  {\n   "id": "",\n   "vips": [\n    {\n     "id": "",\n     "item_id": []\n    }\n   ]\n  }\n ]\n}\n';
+      var tr = '<tr><td colspan="7"><textarea style="width:100%; height:40%;" id="order_json" placeholder="">'
+        + json_sample
+        + '</textarea></td>'
+        + "<td><input type='button' class='btn btn-primary' value='<%= __('orders.buttonlabel.add') %>' onClick='addOrder();'/></td></tr>"
+        + '</tr>';
+      $('#orders_table_tbody').append( tr );
+<% } %>
+
+      //. make tr clickable
+      $('tbody tr[data-href]').addClass('clickable').click( function() {
+        window.location = $(this).attr('data-href');
+      }).find('a').hover( function() {
+        $(this).parents('tr').unbind('click');
+      }, function() {
+        $(this).parents('tr').click( function() {
+          window.location = $(this).attr('data-href');
+        });
+      });
+    },
+    error: function( err ){
+      console.log( err );
+    }
+  });
+}
+
+function addOrder(){
+  var id = $('#order_id').val();
+  var item_id = eval( $('#order_item_id').val() );
+  var user_id = eval( $('#order_user_id').val() );
+  var vip_id = eval( $('#order_vip_id').val() );
+  var locker_id = eval( $('#order_locker_id').val() );
+  var body = $('#order_body').val();
+  var datetime = $('#order_datetime').val();
+  //console.log( 'addOrder(): id=' + id + ', item_id=' + item_id + ', body=' + body + ', datetime=' + datetime );
+
+  $.ajax({
+    type: 'POST',
+    url: '/order',
+    data: { id: id, item_id: item_id, user_id: user_id, vip_id: vip_id, locker_id: locker_id, body: body, datetime: datetime },
+    success: function( data ){
+      window.location.href = '/orders/list';
+    },
+    error: function(){
+      window.location.href = '/orders/list';
+    }
+  });
+}
+
+function editOrder( order ){
+  //console.log( order );
+  $('#order_id').val( order.id );
+  $('#order_item_id').val( JSON.stringify(order.item_id) );
+  $('#order_user_id').val( JSON.stringify(order.user_id) );
+  $('#order_vip_id').val( JSON.stringify(order.vip_id) );
+  $('#order_locker_id').val( JSON.stringify(order.locker_id) );
+  $('#order_body').val( order.body );
+  $('#order_datetime').val( order.datetime );
+}
+
+function deleteOrder(id){
+  console.log( 'deleteOrder(): id=' + id );
+
+  if( window.confirm( '<%= __('orders.confirm.delete') %>' + id + ' ?' ) ){
+    $.ajax({
+      type: 'DELETE',
+      url: '/order',
+      data: { id: id },
+      success: function( data ){
+        window.location.href = '/orders/list';
+      },
+      error: function(){
+        window.location.href = '/orders/list';
+      }
+    });
+  }
+}
+</script>
+<style>
+html, body, {
+  background-color: #ddddff;
+  height: 100%;
+  margin: 0px;
+  padding: 0px
+}
+</style>
+</head>
+<body>
+
+<%- include('./nav', {}) %>
+
+<div class="container-fluid" style="padding:20px 0; font-size:8px;">
+  <table class="table table-hover table-bordered" id="orders_table">
+    <thead class="table-inverse">
+      <tr><th bgcolor="#ddddff" colspan="<% if ( user.role == 0 ){ %>8<% }else{ %>7<% } %>"><%= __('orders.table.title') %></th></tr>
+      <tr><th><%= __('orders.table.id') %></th><th><%= __('orders.table.items') %></th><th><%= __('orders.table.users') %></th><th><%= __('orders.table.vips') %></th><th><%= __('orders.table.lockers') %></th><th><%= __('orders.table.body') %></th><th><%= __('orders.table.datetime') %></th><% if ( user.role == 0 ){ %><th><%= __('orders.table.action') %></th><% } %></tr>
+    </thead>
+    <tbody id="orders_table_tbody">
+    </tbody>
+  </table>
+</div>
+
+<%- include('./footer', {}) %>

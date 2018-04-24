@@ -1,0 +1,35 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<title>R2B</title>
+<script>
+$(function(){
+  document.getElementById( 'file' ).addEventListener( 'change', handleFileSelect, false );
+});
+
+function handleFileSelect( evt ){
+  $('#file_name').val( '' );
+  $('#file_modified').val( '' );
+
+  var files = evt.target.files;
+  for( var i = 0; i < files.length; i ++ ){
+    var file = files[i];
+    console.log( 'i = ' + i );
+    console.log( file );
+
+    $('#file_name').val( file.name );
+    $('#file_modified').val( file.lastModified );
+  }
+}
+</script>
+</head>
+<body>
+<form method="POST" id="form" action="./api/item" enctype="multipart/form-data">
+<input type="file" id="file" name="data"/>
+<input type="hidden" id="file_name" name="file_name" value=""/>
+<input type="hidden" id="file_modified" name="file_modified" value=""/>
+<input type="submit" value="Upload"/>
+</form>
+</body>
+</html>
