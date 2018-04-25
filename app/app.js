@@ -13,9 +13,9 @@ var express = require( 'express' ),
     session = require( 'express-session' ),
     app = express();
 var settings = require( './settings' );
-//var appEnv = cfenv.getAppEnv();
+var appEnv = cfenv.getAppEnv();
 
-var port = /*appEnv.port ||*/ 3000;
+var port = appEnv.port || 3000;
 
 app.set( 'superSecret', settings.superSecret );
 
@@ -308,7 +308,7 @@ app.post( '/item', function( req, res ){
         if( err ){
           fs.unlink( filepath, function(e){} );
           res.status( 401 );
-          res.write( JSON.stringify( { status: false, message: 'Invalid token.' }, 2, null ) );
+          res.write( JSON.stringify( { status: false, error: 'Invalid token.' }, 2, null ) );
           res.end();
         }else if( user && user.id ){
           var user_id = user.id;
@@ -354,18 +354,17 @@ app.post( '/item', function( req, res ){
           }else{
             fs.unlink( filepath, function(e){} );
             res.status( 401 );
-            res.write( JSON.stringify( { status: false, message: 'Invalid filename or/and modified datetime.' }, 2, null ) );
+            res.write( JSON.stringify( { status: false, error: 'Invalid filename or/and modified datetime.' }, 2, null ) );
             res.end();
           }
         }else{
           fs.unlink( filepath, function(e){} );
           res.status( 401 );
-          res.write( JSON.stringify( { status: false, message: 'Invalid token.' }, 2, null ) );
+          res.write( JSON.stringify( { status: false, error: 'Invalid token.' }, 2, null ) );
           res.end();
         }
       });
     }else{
-      console.log( 'POST /item' );
       //. 確認
       var options1 = {
         url: settings.api_url + '/itemCheck',
@@ -378,11 +377,13 @@ app.post( '/item', function( req, res ){
       request( options1, ( err1, res1, item1 ) => {
         res.contentType( 'application/json' );
         if( err1 ){
+          fs.unlink( filepath, function(e){} );
           console.log( err1 );
           res.status( 403 );
           res.write( JSON.stringify( err1, 2, null ) );
           res.end();
         }else{
+          fs.unlink( filepath, function(e){} );
           //console.log( item1 );
           res.write( JSON.stringify( item1, 2, null ) );
           res.end();

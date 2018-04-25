@@ -26,6 +26,40 @@ $(function(){
   }
 
   document.getElementById( 'file' ).addEventListener( 'change', handleFileSelect, false );
+
+
+  $('#form').submit( function( event ){
+    event.preventDefault();
+
+    var form = $('#form').get()[0];
+    var fd = new FormData( form );
+    $.ajax({
+      type: 'POST',
+      url: './item',
+      data: fd,
+      processData: false,
+      contentType: false,
+      dataType: 'json',
+      success: function( data ){
+        data = JSON.parse( data );
+        //console.log( data );
+        if( data ){
+          if( data.status ){
+            alert( data.result );
+          }else{
+            alert( data.error );
+          }
+        }else{
+          alert( 'error: POST /item' );
+        }
+      },
+      error: function(){
+        console.log( 'error' );
+      }
+    });
+
+    return false;
+  });
 });
 
 function handleFileSelect( evt ){
@@ -35,8 +69,8 @@ function handleFileSelect( evt ){
   var files = evt.target.files;
   for( var i = 0; i < files.length; i ++ ){
     var file = files[i];
-    console.log( 'i = ' + i );
-    console.log( file );
+    //console.log( 'i = ' + i );
+    //console.log( file );
 
     $('#file_name').val( file.name );
     $('#file_modified').val( file.lastModified );
