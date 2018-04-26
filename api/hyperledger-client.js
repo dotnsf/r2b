@@ -366,7 +366,7 @@ const HyperledgerClient = function() {
 
   vm.getItemsByUser = ( user, resolved, rejected ) => {
     var where = 'type == _$type';
-    var params = { type: type };
+    var params = {};
     var where = null;
     var params = {};
     var select = 'SELECT ' + NS + '.Item';
