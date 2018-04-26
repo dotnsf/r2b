@@ -563,7 +563,6 @@ apiRoutes.get( '/items', function( req, res ){
         res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
         res.end();
       }else if( user && user.id ){
-        /*
         client.getAllItems( result => {
           var items = [];
           switch( user.role ){
@@ -571,7 +570,7 @@ apiRoutes.get( '/items', function( req, res ){
             //. 全商品が見える
             var result0 = [];
             result.forEach( item0 => {
-              result0.push( { id: item0.id, rev: item0.rev, name: item0.name, hash: item0.hash, datetime: item0.datetime, owner: item0.owner.toString(), modified: item0.modified } );
+              result0.push( { id: item0.id, rev: item0.rev, name: item0.name, hash: item0.hash, datetime: item0.datetime, owner: item0.owner.toString(), modified: item0.modified, datetime: item0.datetime } );
             });
             items = result0;
             break;
@@ -580,16 +579,17 @@ apiRoutes.get( '/items', function( req, res ){
             var result0 = [];
             result.forEach( item0 => {
               if( item0.owner.toString().endsWith( '#' + user.id + '}' ) ){
-                result0.push( { id: item0.id, rev: item0.rev, name: item0.name, hash: item0.hash, datetime: item0.datetime, owner: item0.owner.toString(), modified: item0.modified } );
+                result0.push( { id: item0.id, rev: item0.rev, name: item0.name, hash: item0.hash, datetime: item0.datetime, owner: item0.owner.toString(), modified: item0.modified, datetime: item0.datetime } );
               }
             });
             items = result0;
             break;
           }
-          */
 
+          /*
         client.getItemsByUser( user, result => {
           var items = result;
+          */
 
           res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
           res.end();
