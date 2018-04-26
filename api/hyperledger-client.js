@@ -364,11 +364,18 @@ const HyperledgerClient = function() {
     }, rejected);
   };
 
-  vm.queryItemsByAttr = ( type, resolved, rejected ) => {
+  vm.getItemsByUser = ( user, resolved, rejected ) => {
     var where = 'type == _$type';
     var params = { type: type };
+    var where = null;
+    var params = {};
+    var select = 'SELECT ' + NS + '.Item';
+    if( user.role > 0 ){
+      where = 'owner.id == _$user_id'
+      params = { user_id: user.id };
+      select += ( ' WHERE (' + where + ')' );
+    }
     vm.prepare(() => {
-      var select = 'SELECT ' + NS + '.Item WHERE (' + where + ')';
       var query = vm.businessNetworkConnection.buildQuery( select );
 
       return vm.businessNetworkConnection.query(query, params)
@@ -377,8 +384,8 @@ const HyperledgerClient = function() {
         var result = [];
         items.forEach(item => {
           //result.push(serializer.toJSON(item));
-          //result.push( { id: item.id, name: item.name, type: item.type, body: item.body, amount: item.amout } );
-          result.push(item);
+          result.push( { id: item.id, rev: item.rev, name: item.name, hash: item.hash, owner: item.owner, modified: item.modified, datetime: item.datetime } );
+          //result.push(item);
         });
         resolved(result);
       }).catch(error => {

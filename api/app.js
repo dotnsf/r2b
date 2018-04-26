@@ -563,9 +563,8 @@ apiRoutes.get( '/items', function( req, res ){
         res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
         res.end();
       }else if( user && user.id ){
+        /*
         client.getAllItems( result => {
-console.log( 'result' );
-console.log( result );
           var items = [];
           switch( user.role ){
           case 0: //. admin
@@ -587,9 +586,11 @@ console.log( result );
             items = result0;
             break;
           }
+          */
 
-console.log( 'items' );
-console.log( items );
+        client.getItemsByUser( user, result => {
+          var items = result;
+
           res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
           res.end();
         }, error => {
