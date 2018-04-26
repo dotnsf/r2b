@@ -365,8 +365,6 @@ const HyperledgerClient = function() {
   };
 
   vm.getItemsByUser = ( user, resolved, rejected ) => {
-    var where = 'type == _$type';
-    var params = {};
     var where = null;
     var params = {};
     var select = 'SELECT ' + NS + '.Item';
@@ -375,6 +373,7 @@ const HyperledgerClient = function() {
       params = { user_id: user.id };
       select += ( ' WHERE (' + where + ')' );
     }
+    console.log( 'getItemsByUser: ' + select );
     vm.prepare(() => {
       var query = vm.businessNetworkConnection.buildQuery( select );
 
@@ -387,6 +386,7 @@ const HyperledgerClient = function() {
           result.push( { id: item.id, rev: item.rev, name: item.name, hash: item.hash, owner: item.owner, modified: item.modified, datetime: item.datetime } );
           //result.push(item);
         });
+        console.log( result );
         resolved(result);
       }).catch(error => {
         console.log('HyperLedgerClient.queryItemsByAttr(): reject');
