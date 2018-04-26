@@ -78,7 +78,6 @@ function getItems(){
     url: '/items',
     success: function( result ){
       obj.remove();
-      console.log( result );
       var items = result.result;
       items.forEach( item => {
         var owner_id = '';
@@ -87,15 +86,12 @@ function getItems(){
           owner_id = item.owner.substring( n + 1, item.owner.length - 1 );
         }
 
-        console.log( item );
-
         var tr = "<tr><td>" + item.id.substring( 0, 10 )
           + "..</td><td>" + item.rev
           + "</td><td>" + item.name
           + "</td><td>" + item.hash.substring( 0, 10 )
           + "..</td><td>" + owner_id
           + "</td><td>" + item.modified
-          + "</td><td>" + item.datetime
           + "</td><td>" + item.datetime
           + "</td><td><input type='button' class='btn btn-default' value='<%= __('items.buttonlabel.delete') %>' onClick='deleteItem(\"" + item.id + "\")'/>"
           + "</td></tr>";
