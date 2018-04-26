@@ -60,15 +60,25 @@ $(function(){
 
     return false;
   });
+
+<%
+if( user ){
+%>
+  getItems();
+<%
+}
+%>
 });
 
 function getItems(){
+  $('#items_table_tbody').html( '' );
   var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
   $.ajax({
     type: 'GET',
     url: '/items',
     success: function( result ){
       obj.remove();
+      console.log( result );
       var items = result.result;
       items.forEach( item => {
         var owner_id = '';
