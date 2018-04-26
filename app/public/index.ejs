@@ -62,6 +62,59 @@ $(function(){
   });
 });
 
+function getItems(){
+  var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+  $.ajax({
+    type: 'GET',
+    url: '/items',
+    success: function( result ){
+      obj.remove();
+      var items = result.result;
+      items.forEach( item => {
+        var owner_id = '';
+        var n = item.owner.indexOf( '#' );
+        if( n > -1 ){
+          owner_id = item.owner.substring( n + 1, item.owner.length - 1 );
+        }
+
+        console.log( item );
+
+        var tr = "<tr><td>" + item.id.substring( 0, 10 )
+          + "..</td><td>" + item.rev
+          + "</td><td>" + item.name
+          + "</td><td>" + item.hash.substring( 0, 10 )
+          + "..</td><td>" + owner_id
+          + "</td><td>" + item.modified
+          + "</td><td>" + item.datetime
+          + "</td><td>" + item.datetime
+          + "</td><td><input type='button' class='btn btn-default' value='<%= __('items.buttonlabel.delete') %>' onClick='deleteItem(\"" + item.id + "\")'/>"
+          + "</td></tr>";
+        $('#items_table_tbody').append( tr );
+      });
+    },
+    error: function( err ){
+      obj.remove();
+      console.log( err );
+    }
+  });
+}
+
+function deleteItem(id){
+  if( window.confirm( '<%= __('items.confirm.delete') %>' + id + ' ?' ) ){
+    $.ajax({
+      type: 'DELETE',
+      url: '/item',
+      data: { id: id },
+      success: function( data ){
+        window.location.href = '/';
+      },
+      error: function(){
+        window.location.href = '/';
+      }
+    });
+  }
+}
+
 function handleFileSelect( evt ){
   $('#file_name').val( '' );
   $('#file_modified').val( '' );
@@ -130,5 +183,31 @@ function login(){
     <input type="submit" value="Upload" class="btn btn-info"/>
   </form>
 </div>
+
+<%
+if( user ){
+%>
+<div class="container-fluid" style="padding:20px 0; font-size:8px;">
+  <table class="table table-hover table-bordered" id="items_table">
+    <thead class="table-inverse">
+      <tr>
+        <tr><th bgcolor="#ddddff" colspan="8"</th></tr>
+        <th><%= __('items.table.id') %></th>
+        <th><%= __('items.table.rev') %></th>
+        <th><%= __('items.table.name') %></th>
+        <th><%= __('items.table.hash') %></th>
+        <th><%= __('items.table.owner') %></th>
+        <th><%= __('items.table.modified') %></th>
+        <th><%= __('items.table.datetime') %></th>
+        <th><%= __('items.table.action') %></th>
+      </tr>
+    </thead>
+    <tbody id="items_table_tbody">
+    </tbody>
+  </table>
+</div>
+<%
+}
+%>
 
 <%- include('./footer', {}) %>
