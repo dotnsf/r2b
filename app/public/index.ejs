@@ -42,12 +42,13 @@ $(function(){
       dataType: 'json',
       success: function( data ){
         data = JSON.parse( data );
-        //console.log( data );
+        console.log( data );
         if( data ){
           if( data.status ){
             alert( data.result );
+            getItems();
           }else{
-            alert( data.error );
+            alert( data.result );
           }
         }else{
           alert( 'error: POST /item' );
