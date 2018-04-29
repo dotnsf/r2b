@@ -201,6 +201,47 @@ paths:
       description: Create new item, or Update existing item information
       produces:
         - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/ItemRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+    delete:
+      tags:
+        - item
+      summary: Delete item
+      description: Delete specified item.
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/ItemIdRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '404':
+          description: Failed to find item
+        '500':
+          description: Server error
+  /api/upload:
+    post:
+      tags:
+        - item
+      summary: Create/Update uploaded item
+      description: Create new item, or Update existing item information which is uploaded.
+      produces:
+        - application/json
       consumes:
         - multipart/form-data
       parameters:
@@ -229,27 +270,6 @@ paths:
           description: Success
         '401':
           description: Access error
-        '500':
-          description: Server error
-    delete:
-      tags:
-        - item
-      summary: Delete item
-      description: Delete specified item.
-      produces:
-        - application/json
-      parameters:
-        - name: body
-          in: body
-          schema:
-            $ref: '#/definitions/ItemIdRequestToken'
-      responses:
-        '200':
-          description: Success
-        '401':
-          description: Access error
-        '404':
-          description: Failed to find item
         '500':
           description: Server error
   /api/itemCheck:
@@ -419,32 +439,26 @@ definitions:
         type: integer
         description: Item amount
   ItemRequestToken:
-    requestBody:
-      content:
-        multipart/form-data:
-          schema:
-            properties:
-              file_name:
-                type: string
-                description: file name
-              file_modified:
-                type: integer
-                description: file last modified datetime
-              data:
-                type: string
-                format: binary
-              token:
-                type: string
-                description: token which is retrieved from response of login API.
-  ItemCheckRequest:
-    requestBody:
-      content:
-        multipart/form-data:
-          schema:
-            properties:
-              data:
-                type: string
-                format: binary
+    type: object
+    properties:
+      id:
+        type: string
+        description: Item ID
+      url:
+        type: string
+        description: Source URL
+      name:
+        type: string
+        description: Item name
+      comment:
+        type: string
+        description: Item comment
+      modified:
+        type: string
+        description: Item modified datetime
+      token:
+        type: string
+        description: token which is retrieved from response of login API.
   ItemForBorrowRequestToken:
     type: object
     properties:

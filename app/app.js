@@ -290,7 +290,7 @@ app.get( '/items', function( req, res ){
   });
 });
 
-app.post( '/item', function( req, res ){
+app.post( '/upload', function( req, res ){
   res.contentType( 'application/json' );
 
   var filepath = req.file.path;
@@ -330,7 +330,7 @@ app.post( '/item', function( req, res ){
                 json1['file_modified'] = Math.floor( filemodified );
 
                 var options1 = {
-                  url: settings.api_url + '/item',
+                  url: settings.api_url + '/upload',
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json'
@@ -395,6 +395,36 @@ app.post( '/item', function( req, res ){
     res.write( JSON.stringify( { status: false, error: 'File could not be found' }, 2, null ) );
     res.end();
   }
+});
+
+app.post( '/item', function( req, res ){
+  var json1 = {};
+  if( req.body.id ){ json1['id'] = req.body.id; }
+  if( req.body.url ){ json1['url'] = req.body.url; }
+  if( req.body.name ){ json1['name'] = req.body.name; }
+  if( req.body.modified ){ json1['modified'] = new Date( req.body.modified ); }
+  if( req.body.comment ){ json1['comment'] = req.body.body; }
+  var options1 = {
+    url: settings.api_url + '/item',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    json: json1
+  };
+  request( options1, ( err1, res1, comment1 ) => {
+    res.contentType( 'application/json' );
+    if( err1 ){
+      console.log( err1 );
+      res.status( 403 );
+      res.write( JSON.stringify( err1, 2, null ) );
+      res.end();
+    }else{
+      //console.log( comment1 );
+      res.write( JSON.stringify( comment1, 2, null ) );
+      res.end();
+    }
+  });
 });
 
 app.delete( '/item', function( req, res ){

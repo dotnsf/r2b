@@ -33,6 +33,12 @@ apiRoutes.post( '/login', function( req, res ){
   res.contentType( 'application/json' );
   var id = req.body.id;
   var password = req.body.password;
+
+  //. Hash
+  var hash = crypto.createHash( 'sha512' );
+  hash.update( password );
+  password = hash.digest( 'hex' );
+
   client.getUserForLogin( id, user => {
     if( id && password && user.password == password ){
       var token = jwt.sign( user, app.get( 'superSecret' ), { expiresIn: '25h' } );
@@ -79,6 +85,11 @@ apiRoutes.post( '/adminuser', function( req, res ){
     res.write( JSON.stringify( { status: false, result: 'No password provided.' }, 2, null ) );
     res.end();
   }else{
+    //. Hash
+    var hash = crypto.createHash( 'sha512' );
+    hash.update( password );
+    password = hash.digest( 'hex' );
+
     client.getUser( id, user => {
       res.status( 400 );
       res.write( JSON.stringify( { status: false, result: 'User ' + id + ' already existed.' }, 2, null ) );
@@ -190,6 +201,13 @@ apiRoutes.post( '/user', function( req, res ){
         var type = req.body.type;
         var email = ( req.body.email ? req.body.email : [] );
         var role = req.body.role;
+
+        //. Hash
+        if( password ){
+          var hash = crypto.createHash( 'sha512' );
+          hash.update( password );
+          password = hash.digest( 'hex' );
+        }
 
         client.getUser( id, user0 => {
           //. 更新
@@ -440,6 +458,102 @@ apiRoutes.delete( '/user', function( req, res ){
 
 apiRoutes.post( '/item', function( req, res ){
   res.contentType( 'application/json' );
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+  if( !token ){
+    res.status( 401 );
+    res.write( JSON.stringify( { status: false, result: 'No token provided.' }, 2, null ) );
+    res.end();
+  }else{
+    //. トークンをデコード
+    jwt.verify( token, app.get( 'superSecret' ), function( err, user ){
+      if( err ){
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
+        res.end();
+      }else if( user && user.id ){
+        var user_id = user.id;
+
+        var id = req.body.id;
+        var url = req.body.url;
+        var name = req.body.name;
+        var comment = req.body.comment;
+        var modified = req.body.modified;
+
+        if( url /*&& modified*/ ){
+          generateHash( url ).then( function( value ){
+            var hash = value;
+
+            client.getItem( id, item0 => {
+              if( item0 != null ){
+                if( item0.owner.id == user_id ){
+                  //. 更新
+                  name = ( name ? name : item0.name );
+                  comment = ( comment ? comment : item0.comment );
+                  modified = ( modified ? modified : item0.modified );
+
+                  var item = { id: id, type: 'url', user_id: user_id, name: name, hash: hash, url: url, comment: comment, modified: modified };
+                  client.updateItemTx( item, result => {
+                    //console.log( result );
+                    res.write( JSON.stringify( { status: true, result: 'successfully updated(' + id + ').' }, 2, null ) );
+                    res.end();
+                  }, error1 => {
+                    console.log( error1 );
+                    res.status( 400 );
+                    res.write( JSON.stringify( { status: false, result: error1 }, 2, null ) );
+                    res.end();
+                  });
+                }else{
+                  res.status( 400 );
+                  res.write( JSON.stringify( { status: false, result: 'no permission.' }, 2, null ) );
+                  res.end();
+                }
+              }else{
+                //. 新規登録
+                id = ( id ? id : uuid.v1() );
+                var item = { id: id, type: 'url', user_id: user_id, name: name, hash: hash, url: url, comment: comment, modified: modified };
+                client.createItemTx( item, result => {
+                  //console.log( result );
+                  res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
+                  res.end();
+                }, error1 => {
+                  console.log( error1 );
+                  res.status( 400 );
+                  res.write( JSON.stringify( { status: false, result: error1 }, 2, null ) );
+                  res.end();
+                });
+              }
+            }, error => {
+              //. 新規登録
+              id = ( id ? id : uuid.v1() );
+              var item = { id: id, type: 'url', user_id: user_id, name: name, hash: hash, url: url, comment: comment, modified: modified };
+              client.createItemTx( item, result => {
+                //console.log( result );
+                res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
+                res.end();
+              }, error1 => {
+                console.log( error1 );
+                res.status( 400 );
+                res.write( JSON.stringify( { status: false, result: error1 }, 2, null ) );
+                res.end();
+              });
+            });
+          });
+        }else{
+          res.status( 400 );
+          res.write( JSON.stringify( { status: false, result: 'required parameters not satisfied.' }, 2, null ) );
+          res.end();
+        }
+      }else{
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Valid token is missing.' }, 2, null ) );
+        res.end();
+      }
+    });
+  }
+});
+
+apiRoutes.post( '/upload', function( req, res ){
+  res.contentType( 'application/json' );
   var filepath = req.file.path; //. "TypeError: Cannot read property "path" of undefined
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
   if( !token ){
@@ -500,7 +614,7 @@ apiRoutes.post( '/item', function( req, res ){
                   var id = hash.digest( 'hex' );
 
                   //. 作成
-                  var item = { id: id, user_id: user_id, name: filename, hash: data_hash, modified: filemodified };
+                  var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: null, comment: null, modified: filemodified };
                   client.createItemTx( item, result => {
                     //console.log( result );
                     res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -521,7 +635,7 @@ apiRoutes.post( '/item', function( req, res ){
 
                 //. 作成
                 var user_id = null;
-                var item = { id: id, user_id: user_id, name: filename, hash: data_hash, modified: modified };
+                var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: null, comment: null, modified: modified };
                 client.createItemTx( item, result => {
                   res.write( JSON.stringify( { status: true, result: 'successfully registered.' }, 2, null ) );
                   res.end();
@@ -570,7 +684,7 @@ apiRoutes.get( '/items', function( req, res ){
             //. 全商品が見える
             var result0 = [];
             result.forEach( item0 => {
-              result0.push( { id: item0.id, rev: item0.rev, name: item0.name, hash: item0.hash, datetime: item0.datetime, owner: item0.owner.toString(), modified: item0.modified, datetime: item0.datetime } );
+              result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
             });
             items = result0;
             break;
@@ -579,17 +693,12 @@ apiRoutes.get( '/items', function( req, res ){
             var result0 = [];
             result.forEach( item0 => {
               if( item0.owner.toString().endsWith( '#' + user.id + '}' ) ){
-                result0.push( { id: item0.id, rev: item0.rev, name: item0.name, hash: item0.hash, datetime: item0.datetime, owner: item0.owner.toString(), modified: item0.modified, datetime: item0.datetime } );
+                result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
               }
             });
             items = result0;
             break;
           }
-
-          /*
-        client.getItemsByUser( user, result => {
-          var items = result;
-          */
 
           res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
           res.end();
@@ -751,6 +860,29 @@ apiRoutes.post( '/trade', function( req, res ){
 });
 
 
+function generateHash( url ){
+  return new Promise( function( resolve, reject ){
+    if( url ){
+      var options = {
+        url: url,
+        method: 'GET'
+      };
+      request( options, ( err, res, body ) => {
+        if( err ){
+          resolve( null );
+        }else{
+          //. hash 化
+          var sha512 = crypto.createHash( 'sha512' );
+          sha512.update( body );
+          var hash = sha512.digest( 'hex' );
+          resolve( hash );
+        }
+      });
+    }else{
+      resolve( null );
+    }
+  });
+}
 
 
 app.use( '/api', apiRoutes );

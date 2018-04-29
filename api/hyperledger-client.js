@@ -136,8 +136,11 @@ const HyperledgerClient = function() {
       let transaction = factory.newTransaction(NS, 'CreateItemTx');
       //console.log( transaction );
       transaction.id = item.id;
+      transaction.type = item.type;
       transaction.name = item.name;
       transaction.hash = item.hash;
+      transaction.url = item.url;
+      transaction.comment = item.comment;
       transaction.modified = item.modified;
 
       //transaction.owner = item.owner; //. "resource:me.juge.r2b.network.User#" + owner.id;
@@ -162,8 +165,11 @@ const HyperledgerClient = function() {
       let transaction = factory.newTransaction(NS, 'UpdateItemTx');
       //console.log( transaction );
       transaction.id = item.id;
+      transaction.type = item.type;
       transaction.name = item.name;
       transaction.hash = item.hash;
+      transaction.url = item.url;
+      transaction.comment = item.comment;
       transaction.modified = item.modified;
 
       transaction.owner = factory.newRelationship( NS, 'User', item.user_id ); //. "resource:me.juge.r2b.network.User#" + owner.id;
@@ -331,7 +337,7 @@ const HyperledgerClient = function() {
     vm.getAllItems((items0) => {
       var items = [];
       items0.forEach( function( item0 ){
-        if( item0.id.indexOf( keyword ) > -1 || item0.name.indexOf( keyword ) > -1 || item0.body.indexOf( keyword ) > -1 ){
+        if( item0.id.indexOf( keyword ) > -1 || item0.name.indexOf( keyword ) > -1 || item0.url.indexOf( keyword ) > -1 || item0.comment.indexOf( keyword ) > -1 ){
           items.push( item0 );
         }
       });
@@ -383,13 +389,40 @@ const HyperledgerClient = function() {
         var result = [];
         items.forEach(item => {
           //result.push(serializer.toJSON(item));
-          result.push( { id: item.id, rev: item.rev, name: item.name, hash: item.hash, owner: item.owner, modified: item.modified, datetime: item.datetime } );
+          result.push( { id: item.id, rev: item.rev, type: item.type, name: item.name, hash: item.hash, owner: item.owner, url: item.url, comment: item.comment, modified: item.modified, datetime: item.datetime } );
           //result.push(item);
         });
         console.log( result );
         resolved(result);
       }).catch(error => {
-        console.log('HyperLedgerClient.queryItemsByAttr(): reject');
+        console.log('HyperLedgerClient.queryItemsByUser(): reject');
+        console.log( error );
+        rejected(error);
+      });
+    }, rejected);
+  };
+
+  vm.getItemsByType = ( type, resolved, rejected ) => {
+    var where = 'type == _$type'
+    var params = { type: type };
+    var select = 'SELECT ' + NS + '.Item WHERE ( ' + where + ')';
+    console.log( 'getItemsByType: ' + select );
+    vm.prepare(() => {
+      var query = vm.businessNetworkConnection.buildQuery( select );
+
+      return vm.businessNetworkConnection.query(query, params)
+      .then(items => {
+        let serializer = vm.businessNetworkDefinition.getSerializer();
+        var result = [];
+        items.forEach(item => {
+          //result.push(serializer.toJSON(item));
+          result.push( { id: item.id, rev: item.rev, type: item.type, name: item.name, hash: item.hash, owner: item.owner, url: item.url, comment: item.comment, modified: item.modified, datetime: item.datetime } );
+          //result.push(item);
+        });
+        console.log( result );
+        resolved(result);
+      }).catch(error => {
+        console.log('HyperLedgerClient.queryItemsByType(): reject');
         console.log( error );
         rejected(error);
       });

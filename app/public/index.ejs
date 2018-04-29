@@ -28,14 +28,14 @@ $(function(){
   document.getElementById( 'file' ).addEventListener( 'change', handleFileSelect, false );
 
 
-  $('#form').submit( function( event ){
+  $('#form1').submit( function( event ){
     event.preventDefault();
 
-    var form = $('#form').get()[0];
+    var form = $('#form1').get()[0];
     var fd = new FormData( form );
     $.ajax({
       type: 'POST',
-      url: './item',
+      url: './upload',
       data: fd,
       processData: false,
       contentType: false,
@@ -51,8 +51,50 @@ $(function(){
             alert( data.result );
           }
         }else{
+          alert( 'error: POST /upload' );
+        }
+      },
+      error: function(){
+        console.log( 'error' );
+      }
+    });
+
+    return false;
+  });
+
+  $('#form2').submit( function( event ){
+    event.preventDefault();
+
+    var data = {
+      id: $('#id').val(),
+      category: $('#category').val(),
+      name: $('#name').val(),
+      source: $('#source').val(),
+      url: $('#url').val(),
+      modified: $('#modified').val(),
+      body: $('#body').val()
+    };
+    //console.log( data );
+    
+    $.ajax({
+      type: 'POST',
+      url: './item',
+      data: data,
+      success: function( data ){
+        data = JSON.parse( data );
+        console.log( data );
+        /*
+        if( data ){
+          if( data.status ){
+            alert( data.result );
+            getItems();
+          }else{
+            alert( data.result );
+          }
+        }else{
           alert( 'error: POST /item' );
         }
+        */
       },
       error: function(){
         console.log( 'error' );
@@ -89,8 +131,11 @@ function getItems(){
 
         var tr = "<tr><td>" + item.id.substring( 0, 10 )
           + "..</td><td>" + item.rev
+          + "</td><td>" + item.type
           + "</td><td>" + item.name
           + "</td><td>" + item.hash.substring( 0, 10 )
+          + "..</td><td>" + item.url
+          + "</td><td>" + item.comment.substring( 0, 10 )
           + "..</td><td>" + owner_id
           + "</td><td>" + item.modified
           + "</td><td>" + item.datetime
@@ -181,13 +226,26 @@ function login(){
 </div>
 
 <div class="container">
-  <form method="POST" id="form" action="./item" enctype="multipart/form-data">
+  <form method="POST" id="form1" action="./upload" enctype="multipart/form-data">
     <div class="form-group">
       <input type="file" id="file" class="form-control" name="data"/>
     </div>
     <input type="hidden" id="file_name" name="file_name" value=""/>
     <input type="hidden" id="file_modified" name="file_modified" value=""/>
     <input type="submit" value="Upload" class="btn btn-info"/>
+  </form>
+</div>
+
+<div class="container">
+  <form method="POST" id="form2" action="./item">
+    <div class="form-group">
+      <input type="text" id="id" class="form-control" name="id" placeholder="<%= __('items.placeholder.id') %>"/><br/>
+      <input type="text" id="url" class="form-control" name="url" placeholder="<%= __('items.placeholder.url') %>"/><br/>
+      <input type="text" id="name" class="form-control" name="name" placeholder="<%= __('items.placeholder.name') %>"/><br/>
+      <input type="text" id="modified" class="form-control" name="modified" placeholder="<%= __('items.placeholder.modified') %>"/><br/>
+      <textarea id="comment" class="form-control" name="comment" placeholder="<%= __('items.placeholder.comment') %>"></textarea><br/>
+    </div>
+    <input type="submit" value="Post" class="btn btn-info"/>
   </form>
 </div>
 
@@ -198,11 +256,14 @@ if( user ){
   <table class="table table-hover table-bordered" id="items_table">
     <thead class="table-inverse">
       <tr>
-        <tr><th bgcolor="#ddddff" colspan="8"</th></tr>
+        <tr><th bgcolor="#ddddff" colspan="11"</th></tr>
         <th><%= __('items.table.id') %></th>
         <th><%= __('items.table.rev') %></th>
+        <th><%= __('items.table.type') %></th>
         <th><%= __('items.table.name') %></th>
         <th><%= __('items.table.hash') %></th>
+        <th><%= __('items.table.url') %></th>
+        <th><%= __('items.table.comment') %></th>
         <th><%= __('items.table.owner') %></th>
         <th><%= __('items.table.modified') %></th>
         <th><%= __('items.table.datetime') %></th>
