@@ -83,7 +83,6 @@ $(function(){
       success: function( data ){
         data = JSON.parse( data );
         console.log( data );
-        /*
         if( data ){
           if( data.status ){
             alert( data.result );
@@ -94,7 +93,6 @@ $(function(){
         }else{
           alert( 'error: POST /item' );
         }
-        */
       },
       error: function(){
         console.log( 'error' );
@@ -132,11 +130,10 @@ function getItems(){
         var tr = "<tr><td>" + item.id.substring( 0, 10 )
           + "..</td><td>" + item.rev
           + "</td><td>" + item.type
-          + "</td><td>" + item.name
-          + "</td><td>" + item.hash.substring( 0, 10 )
-          + "..</td><td>" + item.url
-          + "</td><td>" + item.comment.substring( 0, 10 )
-          + "..</td><td>" + owner_id
+          + "</td><td><a target='_blank' href='" + item.url + "'>" + item.name
+          + "</a></td><td>" + item.hash.substring( 0, 10 )
+          + "..</td><td>" + ( item.comment ? item.comment.substring( 0, 10 ) + '..' : '' )
+          + "</td><td>" + owner_id
           + "</td><td>" + item.modified
           + "</td><td>" + item.datetime
           + "</td><td><input type='button' class='btn btn-default' value='<%= __('items.buttonlabel.delete') %>' onClick='deleteItem(\"" + item.id + "\")'/>"
@@ -232,6 +229,7 @@ function login(){
     </div>
     <input type="hidden" id="file_name" name="file_name" value=""/>
     <input type="hidden" id="file_modified" name="file_modified" value=""/>
+    <input type="hidden" id="storefile" name="storefile" value="1"/>
     <input type="submit" value="Upload" class="btn btn-info"/>
   </form>
 </div>
@@ -256,13 +254,12 @@ if( user ){
   <table class="table table-hover table-bordered" id="items_table">
     <thead class="table-inverse">
       <tr>
-        <tr><th bgcolor="#ddddff" colspan="11"</th></tr>
+        <tr><th bgcolor="#ddddff" colspan="10"</th></tr>
         <th><%= __('items.table.id') %></th>
         <th><%= __('items.table.rev') %></th>
         <th><%= __('items.table.type') %></th>
         <th><%= __('items.table.name') %></th>
         <th><%= __('items.table.hash') %></th>
-        <th><%= __('items.table.url') %></th>
         <th><%= __('items.table.comment') %></th>
         <th><%= __('items.table.owner') %></th>
         <th><%= __('items.table.modified') %></th>

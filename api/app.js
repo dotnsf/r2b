@@ -8,8 +8,25 @@ var express = require( 'express' ),
     ejs = require( 'ejs' ),
     jwt = require( 'jsonwebtoken' ),
     multer = require( 'multer' ),
+    uuid = require( 'node-uuid' ),
+    cloudantlib = require( 'cloudant' ),
     app = express();
 var settings = require( './settings' );
+var cloudant = cloudantlib( { account: settings.cloudant_username, password: settings.cloudant_password } );
+var db = null;
+cloudant.db.get( settings.cloudant_db, function( err, body ){
+  if( err ){
+    if( err.statusCode == 404 ){
+      cloudant.db.create( settings.cloudant_db, function( err, body ){
+        if( !err ){
+          db = cloudant.db.use( settings.cloudant_db );
+        }
+      });
+    }
+  }else{
+    db = cloudant.db.use( settings.cloudant_db );
+  }
+});
 var appEnv = cfenv.getAppEnv();
 
 const HyperledgerClient = require( './hyperledger-client' );
@@ -35,44 +52,33 @@ apiRoutes.post( '/login', function( req, res ){
   var password = req.body.password;
 
   //. Hash
-  var hash = crypto.createHash( 'sha512' );
-  hash.update( password );
-  password = hash.digest( 'hex' );
+  generateHash( password ).then( function( value ){
+    password = value;
 
-  client.getUserForLogin( id, user => {
-    if( id && password && user.password == password ){
-      var token = jwt.sign( user, app.get( 'superSecret' ), { expiresIn: '25h' } );
-
-      //. user.loggedin を更新する
-      client.userLoggedInTx( user.id, success => {
-        res.write( JSON.stringify( { status: true, token: token }, 2, null ) );
+    client.getUserForLogin( id, user => {
+      if( id && password && user.password == password ){
+        var token = jwt.sign( user, app.get( 'superSecret' ), { expiresIn: '25h' } );
+  
+        //. user.loggedin を更新する
+        client.userLoggedInTx( user.id, success => {
+          res.write( JSON.stringify( { status: true, token: token }, 2, null ) );
+          res.end();
+        }, error => {
+          console.log( error );
+          res.write( JSON.stringify( { status: true, token: token }, 2, null ) );
+          res.end();
+        });
+      }else{
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Not valid id/password.' }, 2, null ) );
         res.end();
-      }, error => {
-        console.log( error );
-        res.write( JSON.stringify( { status: true, token: token }, 2, null ) );
-        res.end();
-      });
-      /*
-      user.loggedin = new Date();
-      client.updateUserTx( user, success => {
-        res.write( JSON.stringify( { status: true, token: token }, 2, null ) );
-        res.end();
-      }, error => {
-        console.log( error );
-        res.write( JSON.stringify( { status: true, token: token }, 2, null ) );
-        res.end();
-      });
-      */
-    }else{
+      }
+    }, error => {
+      console.log( 'getUserForLogin error: ' + JSON.stringify( error, 2, null ) );
       res.status( 401 );
       res.write( JSON.stringify( { status: false, result: 'Not valid id/password.' }, 2, null ) );
       res.end();
-    }
-  }, error => {
-    console.log( 'getUserForLogin error: ' + JSON.stringify( error, 2, null ) );
-    res.status( 401 );
-    res.write( JSON.stringify( { status: false, result: 'Not valid id/password.' }, 2, null ) );
-    res.end();
+    });
   });
 });
 
@@ -86,25 +92,25 @@ apiRoutes.post( '/adminuser', function( req, res ){
     res.end();
   }else{
     //. Hash
-    var hash = crypto.createHash( 'sha512' );
-    hash.update( password );
-    password = hash.digest( 'hex' );
+    generateHash( password ).then( function( value ){
+      password = value;
 
-    client.getUser( id, user => {
-      res.status( 400 );
-      res.write( JSON.stringify( { status: false, result: 'User ' + id + ' already existed.' }, 2, null ) );
-      res.end();
-    }, error => {
-      var user = { id: id, password: password, name: 'admin', role: 0 };
-
-      client.createUserTx( user, result => {
-        res.write( JSON.stringify( { status: true }, 2, null ) );
+      client.getUser( id, user => {
+        res.status( 400 );
+        res.write( JSON.stringify( { status: false, result: 'User ' + id + ' already existed.' }, 2, null ) );
         res.end();
       }, error => {
-        console.log( error );
-        res.status( 500 );
-        res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
-        res.end();
+        var user = { id: id, password: password, name: 'admin', role: 0 };
+
+        client.createUserTx( user, result => {
+          res.write( JSON.stringify( { status: true }, 2, null ) );
+          res.end();
+        }, error => {
+          console.log( error );
+          res.status( 500 );
+          res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
+          res.end();
+        });
       });
     });
   }
@@ -127,26 +133,24 @@ apiRoutes.post( '/itemCheck', function( req, res ){
         //console.log( data );
         fs.unlink( filepath, function(e){} );
 
-        //. hash 化
-        var hash = crypto.createHash( 'sha512' );
-        hash.update( data );
-        var data_hash = hash.digest( 'hex' );
-
-        //. 存在チェック
-        client.getItemByHash( data_hash, item => {
-          if( item != null ){
-            //. 登録済み
-            res.write( JSON.stringify( { status: true, result: 'data found.' }, 2, null ) );
-            res.end();
-          }else{
+        //. Hash
+        generateHash( data ).then( function( data_hash ){
+          //. 存在チェック
+          client.getItemByHash( data_hash, item => {
+            if( item != null ){
+              //. 登録済み
+              res.write( JSON.stringify( { status: true, result: 'data found.' }, 2, null ) );
+              res.end();
+            }else{
+              //. 未登録
+              res.write( JSON.stringify( { status: true, result: 'data not found.' }, 2, null ) );
+              res.end();
+            }
+          }, error => {
             //. 未登録
             res.write( JSON.stringify( { status: true, result: 'data not found.' }, 2, null ) );
             res.end();
-          }
-        }, error => {
-          //. 未登録
-          res.write( JSON.stringify( { status: true, result: 'data not found.' }, 2, null ) );
-          res.end();
+          });
         });
       }
     });
@@ -290,7 +294,17 @@ apiRoutes.get( '/users', function( req, res ){
             });
             users = result0;
             break;
-          default:
+          case 1: //. user
+            //. 同タイプのユーザーしか見れない
+            var result0 = [];
+            result.forEach( user0 => {
+              if( user0.type == user.type ){
+                result0.push( { id: user0.id, name: user0.name, type: user0.type, email: user0.email, role: user0.role, created: user0.created, loggedin: user0.loggedin } );
+              }
+            });
+            users = result0;
+            break;
+          default: //. guest
             //. 自分しか見れない
             var result0 = [];
             result.forEach( user0 => {
@@ -344,7 +358,17 @@ apiRoutes.post( '/queryUsers', function( req, res ){
             });
             users = result0;
             break;
-          default:
+          case 1: //. user
+            //. 同タイプのユーザーしか見れない
+            var result0 = [];
+            result.forEach( user0 => {
+              if( user0.type == user.type ){
+                result0.push( { id: user0.id, name: user0.name, type: user0.type, email: user0.email, role: user0.role, created: user0.created, loggedin: user0.loggedin } );
+              }
+            });
+            users = result0;
+            break;
+          default: //. guest
             //. 自分しか見れない
             var result0 = [];
             result.forEach( user0 => {
@@ -399,7 +423,24 @@ apiRoutes.get( '/user', function( req, res ){
             res.end();
           });
           break;
-        default:
+        case 1: //. user
+          //. 同タイプのユーザーが見える
+          client.getUser( id, result => {
+            if( result.type == user.type ){
+              res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
+              res.end();
+            }else{
+              res.status( 404 );
+              res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
+              res.end();
+            }
+          }, error => {
+            res.status( 404 );
+            res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
+            res.end();
+          });
+          break;
+        default: //. guest
           //. 自分しか見れない
           if( id == user.id ){
             res.write( JSON.stringify( { status: true, result: user }, 2, null ) );
@@ -470,7 +511,7 @@ apiRoutes.post( '/item', function( req, res ){
         res.status( 401 );
         res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
         res.end();
-      }else if( user && user.id ){
+      }else if( user && user.id /*&& user.role < 2*/ ){
         var user_id = user.id;
 
         var id = req.body.id;
@@ -480,7 +521,7 @@ apiRoutes.post( '/item', function( req, res ){
         var modified = req.body.modified;
 
         if( url /*&& modified*/ ){
-          generateHash( url ).then( function( value ){
+          generateUrlHash( url ).then( function( value ){
             var hash = value;
 
             client.getItem( id, item0 => {
@@ -554,7 +595,7 @@ apiRoutes.post( '/item', function( req, res ){
 
 apiRoutes.post( '/upload', function( req, res ){
   res.contentType( 'application/json' );
-  var filepath = req.file.path; //. "TypeError: Cannot read property "path" of undefined
+  var filepath = req.file.path;
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
   if( !token ){
     fs.unlink( filepath, function(e){} );
@@ -569,7 +610,7 @@ apiRoutes.post( '/upload', function( req, res ){
         res.status( 401 );
         res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
         res.end();
-      }else if( user && user.id ){
+      }else if( user && user.id /*&& user.role < 2 */){
         var user_id = user.id;
 
         var fileoriginalname = req.file.originalname;
@@ -586,7 +627,6 @@ apiRoutes.post( '/upload', function( req, res ){
               res.end();
             }else{
               //console.log( data );
-              fs.unlink( filepath, function(e){} );
 
               //. hash 化
               var hash = crypto.createHash( 'sha512' );
@@ -596,6 +636,8 @@ apiRoutes.post( '/upload', function( req, res ){
               //. 存在チェック
               client.getItemByHash( data_hash, item => {
                 if( item != null ){
+                  fs.unlink( filepath, function(e){} );
+
                   //. 登録済み
                   res.status( 400 );
                   res.write( JSON.stringify( { status: false, result: 'same data already registered.' }, 2, null ) );
@@ -606,27 +648,88 @@ apiRoutes.post( '/upload', function( req, res ){
                   console.log( item );
                 }else{
                   //. 未登録
+
                   filemodified = new Date( filemodified );
+                  var id = uuid.v1();
 
-                  hash = crypto.createHash( 'sha512' );
-                  var obj = { name: filename, modified: filemodified, data: data };
-                  hash.update( Buffer.from( JSON.stringify( obj ) ) );
-                  var id = hash.digest( 'hex' );
+                  //. アップロード
+                  var storefile = req.body.storefile;
+                  if( storefile ){
+                    if( !db ){
+                      fs.unlink( filepath, function(e){} );
 
-                  //. 作成
-                  var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: null, comment: null, modified: filemodified };
-                  client.createItemTx( item, result => {
-                    //console.log( result );
-                    res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
-                    res.end();
-                  }, error1 => {
-                    console.log( error1 );
-                    res.status( 400 );
-                    res.write( JSON.stringify( { status: false, result: error1 }, 2, null ) );
-                    res.end();
-                  });
+                      res.status( 400 );
+                      res.write( JSON.stringify( { status: false, result: 'store db is not ready.' }, 2, null ) );
+                      res.end();
+                    }else{
+                      var mimetype = req.file.mimetype;
+                      if( !mimetype ){
+                        mimetype = 'application/force-download';
+                      }
+
+                      fs.readFile( filepath, 'base64', function( err1, base64data ){
+                        fs.unlink( filepath, function(e){} );
+                        if( err1 ){
+                          res.status( 400 );
+                          res.write( JSON.stringify( { status: false, result: err1  }, 2, null ) );
+                          res.end();
+                        }else{
+                          var doc = {
+                            _id: id,
+                            _attachments: {
+                              file: {
+                                content_type: mimetype,
+                                content_disposition: 'attachment; filename="' + filename + '"',
+                                data: base64data
+                              }
+                            }
+                          };
+
+                          db.insert( doc, function( err2, body2 ){
+                            if( err2 ){
+                              res.status( 400 );
+                              res.write( JSON.stringify( { status: false, result: err2  }, 2, null ) );
+                              res.end();
+                            }else{
+                              var url = 'https://' + settings.cloudant_username + ':' + settings.cloudant_password + '@' + settings.cloudant_username + '.cloudant.com/' + settings.cloudant_db + '/' + id + '/file';
+console.log( 'url = ' + url );
+                              //. 作成
+                              var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: url, comment: null, modified: filemodified };
+                              client.createItemTx( item, result => {
+                                //console.log( result );
+                                res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
+                                res.end();
+                              }, error1 => {
+                                console.log( error1 );
+                                res.status( 400 );
+                                res.write( JSON.stringify( { status: false, result: error1 }, 2, null ) );
+                                res.end();
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
+                  }else{
+                    fs.unlink( filepath, function(e){} );
+
+                    //. 作成
+                    var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: null, comment: null, modified: filemodified };
+                    client.createItemTx( item, result => {
+                      //console.log( result );
+                      res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
+                      res.end();
+                    }, error1 => {
+                      console.log( error1 );
+                      res.status( 400 );
+                      res.write( JSON.stringify( { status: false, result: error1 }, 2, null ) );
+                      res.end();
+                    });
+                  }
                 }
               }, error => {
+                fs.unlink( filepath, function(e){} );
+
                 //. 未登録
                 hash = crypto.createHash( 'sha512' );
                 var obj = { name: filename, modified: modified, data: data };
@@ -688,6 +791,8 @@ apiRoutes.get( '/items', function( req, res ){
             });
             items = result0;
             break;
+          //case 1: //. user
+          //  break;
           default:
             //. 自分のアイテムしか見れない
             var result0 = [];
@@ -773,12 +878,30 @@ apiRoutes.delete( '/item', function( req, res ){
         res.status( 401 );
         res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
         res.end();
-      }else if( user && user.id && user.role == 0 ){
+      }else if( user && user.id /*&& user.role < 2*/ ){
         var id = req.body.id;
 
-        client.deleteItemTx( id, result => {
-          res.write( JSON.stringify( { status: true, result: null }, 2, null ) );
-          res.end();
+        client.getItem( id, item => {
+          if( item.owner.id == user.id ){
+            if( item.type == 'file' && item.url && db ){
+              db.get( id, function( err, doc ){
+                db.destroy( id, doc._rev, function( err1, body1, header1 ){});
+              });
+            }
+
+            client.deleteItemTx( id, result => {
+              res.write( JSON.stringify( { status: true, result: null }, 2, null ) );
+              res.end();
+            }, error => {
+              res.status( 404 );
+              res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
+              res.end();
+            });
+          }else{
+            res.status( 404 );
+            res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
+            res.end();
+          }
         }, error => {
           res.status( 404 );
           res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
@@ -860,7 +983,7 @@ apiRoutes.post( '/trade', function( req, res ){
 });
 
 
-function generateHash( url ){
+function generateUrlHash( url ){
   return new Promise( function( resolve, reject ){
     if( url ){
       var options = {
@@ -878,6 +1001,20 @@ function generateHash( url ){
           resolve( hash );
         }
       });
+    }else{
+      resolve( null );
+    }
+  });
+}
+
+function generateHash( data ){
+  return new Promise( function( resolve, reject ){
+    if( data ){
+      //. hash 化
+      var sha512 = crypto.createHash( 'sha512' );
+      sha512.update( data );
+      var hash = sha512.digest( 'hex' );
+      resolve( hash );
     }else{
       resolve( null );
     }

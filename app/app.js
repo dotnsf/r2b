@@ -328,6 +328,9 @@ app.post( '/upload', function( req, res ){
 
                 json1['file_name'] = filename;
                 json1['file_modified'] = Math.floor( filemodified );
+                if( req.body.storefile ){
+                  json1['storefile'] = req.body.storefile;
+                }
 
                 var options1 = {
                   url: settings.api_url + '/upload',

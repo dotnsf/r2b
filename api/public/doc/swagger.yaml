@@ -260,6 +260,10 @@ paths:
           type: string
           required: true
           description: name of original file
+        - name: storefile
+          in: formData
+          type: integer
+          description: set 1 if you want to store attached data into DB.
         - name: token
           in: formData
           type: string
@@ -394,7 +398,7 @@ definitions:
         description: User emails
       role:
         type: integer
-        description: User role(0:admin, 1:user)
+        description: User role(0:admin, 1:user, 2:guest)
       token:
         type: string
         description: token which is retrieved from response of login API.
