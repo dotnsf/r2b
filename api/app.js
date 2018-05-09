@@ -58,7 +58,7 @@ apiRoutes.post( '/login', function( req, res ){
     client.getUserForLogin( id, user => {
       if( id && password && user.password == password ){
         var token = jwt.sign( user, app.get( 'superSecret' ), { expiresIn: '25h' } );
-  
+
         //. user.loggedin を更新する
         client.userLoggedInTx( user.id, success => {
           res.write( JSON.stringify( { status: true, token: token }, 2, null ) );
@@ -790,9 +790,46 @@ apiRoutes.get( '/items', function( req, res ){
               result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
             });
             items = result0;
+
+            res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
+            res.end();
+
             break;
-          //case 1: //. user
-          //  break;
+          case 1: //. user
+            //. 同じタイプのアイテムがみれる
+            var result0 = [];
+            var idx = 0;
+            result.forEach( item0 => {
+              var n = item0.owner.toString().lastIndexOf( '#' );
+              var owner_id = item0.owner.toString().substring( n + 1 );
+              owner_id = owner_id.substring( 0, owner_id.length - 1 );
+              client.getUser( owner_id, user0 => {
+                if( user0.type == user.type ){
+                  result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
+                }
+
+                idx ++;
+                if( idx == result.length ){
+                  items = result0;
+                  res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
+                  res.end();
+                }
+              }, error => {
+                console.log( error );
+
+                idx ++;
+                if( idx == result.length ){
+                  items = result0;
+                  res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
+                  res.end();
+                }
+              });
+            });
+            //items = result0; //. client.getUser が全て終わる前にここが実行されてしまう
+
+            //. Item に user_type を持たせる？
+
+            break;
           default:
             //. 自分のアイテムしか見れない
             var result0 = [];
@@ -802,11 +839,15 @@ apiRoutes.get( '/items', function( req, res ){
               }
             });
             items = result0;
+
+            res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
+            res.end();
+
             break;
           }
 
-          res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
-          res.end();
+          //res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
+          //res.end();
         }, error => {
           res.status( 500 );
           res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
@@ -842,6 +883,23 @@ apiRoutes.get( '/item', function( req, res ){
             //. 全商品が見える
             res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
             res.end();
+            break;
+          case 1: //. user
+            //. 同じタイプのアイテムがみれる
+            client.getUser( result.owner.id, user0 => {
+              if( user0.type == user.type ){
+                res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
+                res.end();
+              }else{
+                res.status( 403 );
+                res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
+                res.end();
+              }
+            }, error => {
+              res.status( 403 );
+              res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
+              res.end();
+            });
             break;
           default:
             //. 自分しか見れない
