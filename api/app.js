@@ -513,6 +513,7 @@ apiRoutes.post( '/item', function( req, res ){
         res.end();
       }else if( user && user.id /*&& user.role < 2*/ ){
         var user_id = user.id;
+        var user_type = user.type;
 
         var id = req.body.id;
         var url = req.body.url;
@@ -532,7 +533,7 @@ apiRoutes.post( '/item', function( req, res ){
                   comment = ( comment ? comment : item0.comment );
                   modified = ( modified ? modified : item0.modified );
 
-                  var item = { id: id, type: 'url', user_id: user_id, name: name, hash: hash, url: url, comment: comment, modified: modified };
+                  var item = { id: id, type: 'url', user_id: user_id, user_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
                   client.updateItemTx( item, result => {
                     //console.log( result );
                     res.write( JSON.stringify( { status: true, result: 'successfully updated(' + id + ').' }, 2, null ) );
@@ -551,7 +552,7 @@ apiRoutes.post( '/item', function( req, res ){
               }else{
                 //. 新規登録
                 id = ( id ? id : uuid.v1() );
-                var item = { id: id, type: 'url', user_id: user_id, name: name, hash: hash, url: url, comment: comment, modified: modified };
+                var item = { id: id, type: 'url', user_id: user_id, user_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
                 client.createItemTx( item, result => {
                   //console.log( result );
                   res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -566,7 +567,7 @@ apiRoutes.post( '/item', function( req, res ){
             }, error => {
               //. 新規登録
               id = ( id ? id : uuid.v1() );
-              var item = { id: id, type: 'url', user_id: user_id, name: name, hash: hash, url: url, comment: comment, modified: modified };
+              var item = { id: id, type: 'url', user_id: user_id, user_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
               client.createItemTx( item, result => {
                 //console.log( result );
                 res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -612,6 +613,7 @@ apiRoutes.post( '/upload', function( req, res ){
         res.end();
       }else if( user && user.id /*&& user.role < 2 */){
         var user_id = user.id;
+        var user_type = user.type;
 
         var fileoriginalname = req.file.originalname;
         var filename = req.body.file_name;
@@ -694,7 +696,7 @@ apiRoutes.post( '/upload', function( req, res ){
                               var url = 'https://' + settings.cloudant_username + ':' + settings.cloudant_password + '@' + settings.cloudant_username + '.cloudant.com/' + settings.cloudant_db + '/' + id + '/file';
 console.log( 'url = ' + url );
                               //. 作成
-                              var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: url, comment: null, modified: filemodified };
+                              var item = { id: id, type: 'file', user_id: user_id, user_type: user_type, name: filename, hash: data_hash, url: url, comment: null, modified: filemodified };
                               client.createItemTx( item, result => {
                                 //console.log( result );
                                 res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -714,7 +716,7 @@ console.log( 'url = ' + url );
                     fs.unlink( filepath, function(e){} );
 
                     //. 作成
-                    var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: null, comment: null, modified: filemodified };
+                    var item = { id: id, type: 'file', user_id: user_id, user_type: user_type, name: filename, hash: data_hash, url: null, comment: null, modified: filemodified };
                     client.createItemTx( item, result => {
                       //console.log( result );
                       res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -738,7 +740,7 @@ console.log( 'url = ' + url );
 
                 //. 作成
                 var user_id = null;
-                var item = { id: id, type: 'file', user_id: user_id, name: filename, hash: data_hash, url: null, comment: null, modified: modified };
+                var item = { id: id, type: 'file', user_id: user_id, user_type: user_type, name: filename, hash: data_hash, url: null, comment: null, modified: modified };
                 client.createItemTx( item, result => {
                   res.write( JSON.stringify( { status: true, result: 'successfully registered.' }, 2, null ) );
                   res.end();
@@ -787,67 +789,34 @@ apiRoutes.get( '/items', function( req, res ){
             //. 全商品が見える
             var result0 = [];
             result.forEach( item0 => {
-              result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
+              result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), owner_type: item0.owner_type, url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
             });
             items = result0;
-
-            res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
-            res.end();
-
             break;
           case 1: //. user
             //. 同じタイプのアイテムがみれる
             var result0 = [];
-            var idx = 0;
             result.forEach( item0 => {
-              var n = item0.owner.toString().lastIndexOf( '#' );
-              var owner_id = item0.owner.toString().substring( n + 1 );
-              owner_id = owner_id.substring( 0, owner_id.length - 1 );
-              client.getUser( owner_id, user0 => {
-                if( user0.type == user.type ){
-                  result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
-                }
-
-                idx ++;
-                if( idx == result.length ){
-                  items = result0;
-                  res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
-                  res.end();
-                }
-              }, error => {
-                console.log( error );
-
-                idx ++;
-                if( idx == result.length ){
-                  items = result0;
-                  res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
-                  res.end();
-                }
-              });
+              if( item0.owner_type == user.type ){
+                result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), owner_type: item0.owner_type, url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
+              }
             });
-            //items = result0; //. client.getUser が全て終わる前にここが実行されてしまう
-
-            //. Item に user_type を持たせる？
-
+            items = result0;
             break;
           default:
             //. 自分のアイテムしか見れない
             var result0 = [];
             result.forEach( item0 => {
               if( item0.owner.toString().endsWith( '#' + user.id + '}' ) ){
-                result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
+                result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), owner_type: item0.owner_type, url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
               }
             });
             items = result0;
-
-            res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
-            res.end();
-
             break;
           }
 
-          //res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
-          //res.end();
+          res.write( JSON.stringify( { status: true, result: items }, 2, null ) );
+          res.end();
         }, error => {
           res.status( 500 );
           res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
@@ -886,20 +855,14 @@ apiRoutes.get( '/item', function( req, res ){
             break;
           case 1: //. user
             //. 同じタイプのアイテムがみれる
-            client.getUser( result.owner.id, user0 => {
-              if( user0.type == user.type ){
-                res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
-                res.end();
-              }else{
-                res.status( 403 );
-                res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
-                res.end();
-              }
-            }, error => {
+            if( result.owner_type == user.type ){
+              res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
+              res.end();
+            }else{
               res.status( 403 );
               res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
               res.end();
-            });
+            }
             break;
           default:
             //. 自分しか見れない
