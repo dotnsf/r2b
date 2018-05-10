@@ -55,7 +55,7 @@ const HyperledgerClient = function() {
       transaction.id = user.id;
       transaction.password = user.password;
       transaction.name = user.name;
-      if( user.type ){ transaction.type = user.type; }
+      transaction.type = ( user.type ? user.type : [] );
       transaction.email = ( user.email ? user.email : [] );
       transaction.role = user.role;
 
@@ -144,8 +144,8 @@ const HyperledgerClient = function() {
       transaction.modified = item.modified;
 
       //transaction.owner = item.owner; //. "resource:me.juge.r2b.network.User#" + owner.id;
-      transaction.owner = factory.newRelationship( NS, 'User', item.user_id );
-      transaction.owner_type = item.user_type;
+      transaction.owner = factory.newRelationship( NS, 'User', item.owner_id );
+      transaction.owner_type = item.owner_type;
 
       //console.log( transaction );
 
@@ -173,8 +173,8 @@ const HyperledgerClient = function() {
       transaction.comment = item.comment;
       transaction.modified = item.modified;
 
-      transaction.owner = factory.newRelationship( NS, 'User', item.user_id ); //. "resource:me.juge.r2b.network.User#" + owner.id;
-      transaction.owner_type = item.user_type;
+      transaction.owner = factory.newRelationship( NS, 'User', item.owner_id ); //. "resource:me.juge.r2b.network.User#" + owner.id;
+      transaction.owner_type = item.owner_type;
 
       //console.log( transaction );
 
@@ -206,7 +206,7 @@ const HyperledgerClient = function() {
   };
 
 
-  vm.changeOwnerTx = (item, user, resolved, rejected) => {
+  vm.changeOwnerTx = (item, user, owner_type, resolved, rejected) => {
     vm.prepare(() => {
       let factory = vm.businessNetworkDefinition.getFactory();
       let transaction = factory.newTransaction(NS, 'ChangeOwnerTx');
@@ -215,6 +215,7 @@ const HyperledgerClient = function() {
       //transaction.user = user; //. "resource:me.juge.r2b.network.User#" + user.id;
       transaction.item = factory.newRelationship( NS, 'Item', item.id );
       transaction.user = factory.newRelationship( NS, 'User', user.id );
+      transaction.owner_type = owner_type;
 
       return vm.businessNetworkConnection.submitTransaction(transaction)
       .then(result => {

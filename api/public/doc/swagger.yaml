@@ -366,7 +366,9 @@ definitions:
         type: string
         description: User name
       type:
-        type: string
+        type: array
+        items:
+          type: string
         description: User type
       email:
         type: array
@@ -389,7 +391,9 @@ definitions:
         type: string
         description: User name
       type:
-        type: string
+        type: array
+        items:
+          type: string
         description: User type
       email:
         type: array
@@ -433,15 +437,21 @@ definitions:
       id:
         type: string
         description: Item ID
+      url:
+        type: string
+        description: Source URL
       name:
         type: string
         description: Item name
-      body:
+      comment:
         type: string
-        description: Item body
-      amount:
-        type: integer
-        description: Item amount
+        description: Item comment
+      modified:
+        type: string
+        description: Item modified datetime
+      user_type:
+        type: string
+        description: Item owner type
   ItemRequestToken:
     type: object
     properties:
@@ -460,6 +470,9 @@ definitions:
       modified:
         type: string
         description: Item modified datetime
+      user_type:
+        type: string
+        description: Item owner type
       token:
         type: string
         description: token which is retrieved from response of login API.

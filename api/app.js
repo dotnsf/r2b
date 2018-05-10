@@ -298,7 +298,7 @@ apiRoutes.get( '/users', function( req, res ){
             //. 同タイプのユーザーしか見れない
             var result0 = [];
             result.forEach( user0 => {
-              if( user0.type == user.type ){
+              if( hasCommonType( user0, user ) ){
                 result0.push( { id: user0.id, name: user0.name, type: user0.type, email: user0.email, role: user0.role, created: user0.created, loggedin: user0.loggedin } );
               }
             });
@@ -362,7 +362,7 @@ apiRoutes.post( '/queryUsers', function( req, res ){
             //. 同タイプのユーザーしか見れない
             var result0 = [];
             result.forEach( user0 => {
-              if( user0.type == user.type ){
+              if( hasCommonType( user0, user ) ){
                 result0.push( { id: user0.id, name: user0.name, type: user0.type, email: user0.email, role: user0.role, created: user0.created, loggedin: user0.loggedin } );
               }
             });
@@ -426,7 +426,7 @@ apiRoutes.get( '/user', function( req, res ){
         case 1: //. user
           //. 同タイプのユーザーが見える
           client.getUser( id, result => {
-            if( result.type == user.type ){
+            if( hasCommonType( result, user ) ){
               res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
               res.end();
             }else{
@@ -513,13 +513,13 @@ apiRoutes.post( '/item', function( req, res ){
         res.end();
       }else if( user && user.id /*&& user.role < 2*/ ){
         var user_id = user.id;
-        var user_type = user.type;
 
         var id = req.body.id;
         var url = req.body.url;
         var name = req.body.name;
         var comment = req.body.comment;
         var modified = req.body.modified;
+        var user_type = ( req.body.user_type ? req.body.user_type : user.type[0] );
 
         if( url /*&& modified*/ ){
           generateUrlHash( url ).then( function( value ){
@@ -533,7 +533,7 @@ apiRoutes.post( '/item', function( req, res ){
                   comment = ( comment ? comment : item0.comment );
                   modified = ( modified ? modified : item0.modified );
 
-                  var item = { id: id, type: 'url', user_id: user_id, user_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
+                  var item = { id: id, type: 'url', owner_id: user_id, owner_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
                   client.updateItemTx( item, result => {
                     //console.log( result );
                     res.write( JSON.stringify( { status: true, result: 'successfully updated(' + id + ').' }, 2, null ) );
@@ -552,7 +552,7 @@ apiRoutes.post( '/item', function( req, res ){
               }else{
                 //. 新規登録
                 id = ( id ? id : uuid.v1() );
-                var item = { id: id, type: 'url', user_id: user_id, user_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
+                var item = { id: id, type: 'url', owner_id: user_id, owner_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
                 client.createItemTx( item, result => {
                   //console.log( result );
                   res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -567,7 +567,7 @@ apiRoutes.post( '/item', function( req, res ){
             }, error => {
               //. 新規登録
               id = ( id ? id : uuid.v1() );
-              var item = { id: id, type: 'url', user_id: user_id, user_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
+              var item = { id: id, type: 'url', owner_id: user_id, owner_type: user_type, name: name, hash: hash, url: url, comment: comment, modified: modified };
               client.createItemTx( item, result => {
                 //console.log( result );
                 res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -613,11 +613,12 @@ apiRoutes.post( '/upload', function( req, res ){
         res.end();
       }else if( user && user.id /*&& user.role < 2 */){
         var user_id = user.id;
-        var user_type = user.type;
 
         var fileoriginalname = req.file.originalname;
         var filename = req.body.file_name;
         var filemodified = Math.floor(req.body.file_modified);
+        var user_type = ( req.body.user_type ? req.body.user_type : user.type[0] );
+        var comment = ( req.body.comment ? req.body.comment : null ); //. #2
 
         if( filepath && filename && /*filename == fileoriginalname &&*/ filemodified ){
           fs.readFile( filepath, function( err, data ){
@@ -696,7 +697,7 @@ apiRoutes.post( '/upload', function( req, res ){
                               var url = 'https://' + settings.cloudant_username + ':' + settings.cloudant_password + '@' + settings.cloudant_username + '.cloudant.com/' + settings.cloudant_db + '/' + id + '/file';
 console.log( 'url = ' + url );
                               //. 作成
-                              var item = { id: id, type: 'file', user_id: user_id, user_type: user_type, name: filename, hash: data_hash, url: url, comment: null, modified: filemodified };
+                              var item = { id: id, type: 'file', owner_id: user_id, owner_type: user_type, name: filename, hash: data_hash, url: url, comment: comment, modified: filemodified };
                               client.createItemTx( item, result => {
                                 //console.log( result );
                                 res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -716,7 +717,7 @@ console.log( 'url = ' + url );
                     fs.unlink( filepath, function(e){} );
 
                     //. 作成
-                    var item = { id: id, type: 'file', user_id: user_id, user_type: user_type, name: filename, hash: data_hash, url: null, comment: null, modified: filemodified };
+                    var item = { id: id, type: 'file', owner_id: user_id, owner_type: user_type, name: filename, hash: data_hash, url: null, comment: comment, modified: filemodified };
                     client.createItemTx( item, result => {
                       //console.log( result );
                       res.write( JSON.stringify( { status: true, result: 'successfully registered(' + id + ').' }, 2, null ) );
@@ -740,7 +741,7 @@ console.log( 'url = ' + url );
 
                 //. 作成
                 var user_id = null;
-                var item = { id: id, type: 'file', user_id: user_id, user_type: user_type, name: filename, hash: data_hash, url: null, comment: null, modified: modified };
+                var item = { id: id, type: 'file', owner_id: user_id, owner_type: user_type, name: filename, hash: data_hash, url: null, comment: comment, modified: modified };
                 client.createItemTx( item, result => {
                   res.write( JSON.stringify( { status: true, result: 'successfully registered.' }, 2, null ) );
                   res.end();
@@ -797,8 +798,14 @@ apiRoutes.get( '/items', function( req, res ){
             //. 同じタイプのアイテムがみれる
             var result0 = [];
             result.forEach( item0 => {
-              if( item0.owner_type == user.type ){
-                result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), owner_type: item0.owner_type, url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
+              if( item0.owner_type ){
+                if( user.type.indexOf( item0.owner_type ) > -1 ){
+                  result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), owner_type: item0.owner_type, url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
+                }
+              }else{
+                if( item0.owner.toString().endsWith( '#' + user.id + '}' ) ){
+                  result0.push( { id: item0.id, rev: item0.rev, type: item0.type, name: item0.name, hash: item0.hash, owner: item0.owner.toString(), owner_type: item0.owner_type, url: item0.url, comment: item0.comment, modified: item0.modified, datetime: item0.datetime } );
+                }
               }
             });
             items = result0;
@@ -855,13 +862,24 @@ apiRoutes.get( '/item', function( req, res ){
             break;
           case 1: //. user
             //. 同じタイプのアイテムがみれる
-            if( result.owner_type == user.type ){
-              res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
-              res.end();
+            if( result.owner_type ){
+              if( user.type.indexOf( result.owner_type ) > -1 ){
+                res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
+                res.end();
+              }else{
+                res.status( 403 );
+                res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
+                res.end();
+              }
             }else{
-              res.status( 403 );
-              res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
-              res.end();
+              if( result.owner.id == user.id ){
+                res.write( JSON.stringify( { status: true, result: result }, 2, null ) );
+                res.end();
+              }else{
+                res.status( 403 );
+                res.write( JSON.stringify( { status: false, result: 'Forbidden' }, 2, null ) );
+                res.end();
+              }
             }
             break;
           default:
@@ -963,8 +981,9 @@ apiRoutes.post( '/trade', function( req, res ){
             if( item && item.owner ){
               if( item.owner.id == user.id ){
                 var user_id = req.body.user_id;
+                var owner_type = ( req.body.owner_type ? req.body.owner_type : null );
                 client.getUser( user_id, new_owner => {
-                  client.changeOwnerTx( item, new_owner, result => {
+                  client.changeOwnerTx( item, new_owner, owner_type, result => {
                     res.write( JSON.stringify( { status: true, result: null }, 2, null ) );
                     res.end();
                   }, error => {
@@ -1003,6 +1022,21 @@ apiRoutes.post( '/trade', function( req, res ){
   }
 });
 
+
+function hasCommonType( user1, user2 ){
+  var b = false;
+  var types1 = user1.type;
+  var types2 = user2.type;
+
+  if( types1 && types2 && types1.length > 0 && types2.length > 0 ){
+    for( var i = 0; i < types1.length && !b; i ++ ){
+      var n = types2.indexOf( types1[i] );
+      b = ( n > -1 );
+    }
+  }
+
+  return b;
+}
 
 function generateUrlHash( url ){
   return new Promise( function( resolve, reject ){
