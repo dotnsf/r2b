@@ -35,7 +35,7 @@ function getUsers(){
       //console.log( users );
       var users = result.result;
       users.forEach( user => {
-        var tr = "<tr><td>" + user.id + "</td><td>********</td><td>" + user.name + "</td><td>" + user.type + "</td><td> " + abbreviateArray( user.email ) + "</td><td>" + user.role + "</td><td>" + user.created + "</td><td>" + user.loggedin + "</td>";
+        var tr = "<tr><td>" + user.id + "</td><td>********</td><td>" + user.name + "</td><td>" + abbreviateArray( user.type ) + "</td><td> " + abbreviateArray( user.email ) + "</td><td>" + user.role + "</td><td>" + user.created + "</td><td>" + user.loggedin + "</td>";
         tr += "<td><input type='button' class='btn btn-default' value='<%= __('users.buttonlabel.delete') %>' onClick='deleteUser(\"" + user.id + "\")'/></td>";
         tr += "</tr>";
         $('#users_table_tbody').append( tr );
