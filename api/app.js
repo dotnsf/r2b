@@ -27,6 +27,10 @@ cloudant.db.get( settings.cloudant_db, function( err, body ){
     db = cloudant.db.use( settings.cloudant_db );
   }
 });
+
+var db_dashboard_url = 'https://' + settings.cloudant_username + ':' + settings.cloudant_password + '@' + settings.cloudant_username + '.cloudant.com/dashboard.html';
+console.log( 'db_dashboard: ' + db_dashboard_url );
+
 var appEnv = cfenv.getAppEnv();
 
 const HyperledgerClient = require( './hyperledger-client' );

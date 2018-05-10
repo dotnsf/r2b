@@ -204,7 +204,7 @@ app.post( '/user', function( req, res ){
   if( req.body.id ){ json1['id'] = req.body.id; }
   if( req.body.password ){ json1['password'] = req.body.password; }
   if( req.body.name ){ json1['name'] = req.body.name; }
-  if( req.body.type ){ json1['type'] = req.body.type; }
+  if( req.body.type ){ json1['type'] = req.body.type.split(','); }
   if( req.body.email ){ json1['email'] = req.body.email.split(','); }
   if( req.body.role ){ json1['role'] = parseInt( req.body.role ); } //. parseInt() 必須
   var options1 = {
@@ -331,6 +331,12 @@ app.post( '/upload', function( req, res ){
                 if( req.body.storefile ){
                   json1['storefile'] = req.body.storefile;
                 }
+                if( req.body.comment ){
+                  json1['comment'] = req.body.comment;
+                }
+                if( req.body.user_type ){
+                  json1['user_type'] = req.body.user_type;
+                }
 
                 var options1 = {
                   url: settings.api_url + '/upload',
@@ -406,7 +412,8 @@ app.post( '/item', function( req, res ){
   if( req.body.url ){ json1['url'] = req.body.url; }
   if( req.body.name ){ json1['name'] = req.body.name; }
   if( req.body.modified ){ json1['modified'] = new Date( req.body.modified ); }
-  if( req.body.comment ){ json1['comment'] = req.body.body; }
+  if( req.body.comment ){ json1['comment'] = req.body.comment; }
+  if( req.body.user_type ){ json1['user_type'] = req.body.user_type; }
   var options1 = {
     url: settings.api_url + '/item',
     method: 'POST',

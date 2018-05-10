@@ -75,7 +75,7 @@ $(function(){
       body: $('#body').val()
     };
     //console.log( data );
-    
+
     $.ajax({
       type: 'POST',
       url: './item',
@@ -225,7 +225,15 @@ function login(){
 <div class="container">
   <form method="POST" id="form1" action="./upload" enctype="multipart/form-data">
     <div class="form-group">
-      <input type="file" id="file" class="form-control" name="data"/>
+      <input type="file" id="file" class="form-control" name="data"/><br/>
+<%
+if( user ){
+%>
+      <input type="text" id="user_type" class="form-control" name="user_type" value="" placeholder="<%= __('items.placeholder.user_type') %>"/><br/>
+      <textarea id="comment" class="form-control" name="comment" placeholder="<%= __('items.placeholder.comment') %>"></textarea><br/>
+<%
+}
+%>
     </div>
     <input type="hidden" id="file_name" name="file_name" value=""/>
     <input type="hidden" id="file_modified" name="file_modified" value=""/>
@@ -234,6 +242,7 @@ function login(){
   </form>
 </div>
 
+<!--
 <div class="container">
   <form method="POST" id="form2" action="./item">
     <div class="form-group">
@@ -241,11 +250,13 @@ function login(){
       <input type="text" id="url" class="form-control" name="url" placeholder="<%= __('items.placeholder.url') %>"/><br/>
       <input type="text" id="name" class="form-control" name="name" placeholder="<%= __('items.placeholder.name') %>"/><br/>
       <input type="text" id="modified" class="form-control" name="modified" placeholder="<%= __('items.placeholder.modified') %>"/><br/>
+      <input type="text" id="user_type" class="form-control" name="user_type" placeholder="<%= __('items.placeholder.user_type') %>"/><br/>
       <textarea id="comment" class="form-control" name="comment" placeholder="<%= __('items.placeholder.comment') %>"></textarea><br/>
     </div>
     <input type="submit" value="Post" class="btn btn-info"/>
   </form>
 </div>
+-->
 
 <%
 if( user ){

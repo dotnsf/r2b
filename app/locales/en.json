@@ -36,6 +36,7 @@
 	"items.placeholder.name": "name",
 	"items.placeholder.url": "url",
 	"items.placeholder.type": "type",
+	"items.placeholder.user_type": "user_type",
 	"items.placeholder.comment": "comment",
 	"items.placeholder.owner_id": "owner_id",
 	"items.placeholder.modified": "modified",
