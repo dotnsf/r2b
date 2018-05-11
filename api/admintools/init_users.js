@@ -1,4 +1,4 @@
-//. init_data.js
+//. init_users.js
 //.
 //. (1) Create admin user(POST /api/adminuser)
 //. (2) Login as admin(POST /api/login)
