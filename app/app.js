@@ -15,7 +15,7 @@ var express = require( 'express' ),
 var settings = require( './settings' );
 var appEnv = cfenv.getAppEnv();
 
-var port = appEnv.port || 3000;
+var port = settings.app_port || appEnv.port || 3000;
 
 app.set( 'superSecret', settings.superSecret );
 
