@@ -699,7 +699,7 @@ apiRoutes.post( '/upload', function( req, res ){
                               res.end();
                             }else{
                               var url = 'https://' + settings.cloudant_username + ':' + settings.cloudant_password + '@' + settings.cloudant_username + '.cloudant.com/' + settings.cloudant_db + '/' + id + '/file';
-console.log( 'url = ' + url );
+                              console.log( 'url = ' + url );
                               //. 作成
                               var item = { id: id, type: 'file', owner_id: user_id, owner_type: user_type, name: filename, hash: data_hash, url: url, comment: comment, modified: filemodified };
                               client.createItemTx( item, result => {
@@ -1020,6 +1020,70 @@ apiRoutes.post( '/trade', function( req, res ){
       }else{
         res.status( 401 );
         res.write( JSON.stringify( { status: false, result: 'Valid token is missing.' }, 2, null ) );
+        res.end();
+      }
+    });
+  }
+});
+
+
+apiRoutes.get( '/transactions', function( req, res ){
+  res.contentType( 'application/json' );
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+  if( !token ){
+    res.write( JSON.stringify( { status: false, result: 'No token provided.' }, 2, null ) );
+    res.end();
+  }else{
+    //. トークンをデコード
+    jwt.verify( token, app.get( 'superSecret' ), function( err, user ){
+      if( err ){
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
+        res.end();
+      }else if( user && user.id ){
+        client.getAllHistorianRecords( records => {
+          res.write( JSON.stringify( { status: true, result: records }, 2, null ) );
+          res.end();
+        }, error => {
+          res.status( 500 );
+          res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
+          res.end();
+        });
+      }else{
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
+        res.end();
+      }
+    });
+  }
+});
+
+apiRoutes.get( '/transaction', function( req, res ){
+  res.contentType( 'application/json' );
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+  if( !token ){
+    res.write( JSON.stringify( { status: false, result: 'No token provided.' }, 2, null ) );
+    res.end();
+  }else{
+    //. トークンをデコード
+    jwt.verify( token, app.get( 'superSecret' ), function( err, user ){
+      if( err ){
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
+        res.end();
+      }else if( user && user.id ){
+        var id = req.query.id;
+        client.getTransactionById( id, transaction => {
+          res.write( JSON.stringify( { status: true, result: transaction }, 2, null ) );
+          res.end();
+        }, error => {
+          res.status( 500 );
+          res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
+          res.end();
+        });
+      }else{
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
         res.end();
       }
     });

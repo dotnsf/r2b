@@ -12,6 +12,8 @@ tags:
     description: APIs for Item
   - name: trade
     description: Trading API
+  - name: transaction
+    description: Transaction API
 schemes:
   - http
   - https
@@ -330,6 +332,26 @@ paths:
           in: body
           schema:
             $ref: '#/definitions/TradeRequestToken'
+      responses:
+        '200':
+          description: Success
+        '401':
+          description: Access error
+        '500':
+          description: Server error
+  /api/transactions:
+    get:
+      tags:
+        - transaction
+      summary: Get transactions
+      description: Get all transactions which can be retrieved from currrent token.
+      produces:
+        - application/json
+      parameters:
+        - name: token
+          type: string
+          in: query
+          description: token which is retrieved from response of login API.
       responses:
         '200':
           description: Success

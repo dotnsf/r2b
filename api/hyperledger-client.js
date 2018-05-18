@@ -508,6 +508,63 @@ const HyperledgerClient = function() {
       });
     }, rejected);
   };
+
+
+  //. All Historian Records
+  vm.getAllHistorianRecords = ( resolved, rejected ) => {
+    vm.prepare(() => {
+      return vm.businessNetworkConnection.getHistorian()
+      .then( historian => {
+        return historian.getAll();
+      }).then( historianRecords => {
+        let serializer = vm.businessNetworkDefinition.getSerializer();
+        var records = [];
+        historianRecords.forEach( record => {
+          var obj = serializer.toJSON( record );
+          records.push( obj );
+        });
+        resolved( records );
+      }).catch( error => {
+        console.log('HyperLedgerClient.getAllHistorianRecords(): reject');
+        console.log( error );
+        rejected( error );
+      });
+    }, rejected);
+  };
+
+  //. Transaction by Id
+  vm.getTransactionById = ( transactionId, resolved, rejected ) => {
+    vm.prepare(() => {
+      //return vm.businessNetworkConnection.getTransactionRegistry(NS + '.' + type)
+      return vm.businessNetworkConnection.getTransactionRegistry('org.hyperledger.composer.system')
+      .then( registory => {
+        if( transactionId ){
+          return registory.exists( transactionId )
+          .then( exists => {
+            if( exists ){
+              return registory.get( transactionId );
+            }else{
+              return null;
+            }
+          });
+        }else{
+          return null;
+        }
+      }).then( data => {
+        var transaction = null;
+        if( data ){
+          let serializer = vm.businessNetworkDefinition.getSerializer();
+          transaction = serializer.toJSON( data );
+        }
+        resolved( transaction );
+      }).catch( error => {
+        console.log('HyperLedgerClient.getTransactionById(): reject');
+        console.log( error );
+        rejected( error );
+      });
+    }, rejected);
+  };
+
 }
 
 module.exports = HyperledgerClient;
