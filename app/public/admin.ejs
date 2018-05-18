@@ -130,6 +130,7 @@ function getItems(){
   });
 }
 
+
 function tradeItem( item ){
   if( window.confirm( '<%= __('items.confirm.trade') %>' + item.id + ' ?' ) ){
     var new_owner_id = $('#new_owner_id_for_'+item.id).val();

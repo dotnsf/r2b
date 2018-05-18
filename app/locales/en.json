@@ -57,5 +57,6 @@
 	"users.table.loggedin": "Logged in",
 	"items.confirm.trade": "Trade Item: ",
 	"users.placeholder.loggedin": "logged in",
+	"viewer.head.title": "Viewer",
 	"admin.head.title": "R2B"
 }

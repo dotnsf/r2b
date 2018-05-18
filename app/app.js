@@ -110,6 +110,25 @@ app.get( '/admin', function( req, res ){
   }
 });
 
+app.get( '/viewer', function( req, res ){
+  if( req.session && req.session.token ){
+    //. トークンをデコード
+    var token = req.session.token;
+    jwt.verify( token, app.get('superSecret'), function( err, user ){
+      if( err ){
+        res.redirect( '/' );
+      }else if( user && user.id ){
+        res.render( 'viewer', { user: user } );
+      }else{
+        res.redirect( '/' );
+      }
+    });
+  }else{
+    res.redirect( '/' );
+  }
+});
+
+
 app.get( '/login', function( req, res ){
   var message = ( req.query.message ? req.query.message : '' );
   res.render( 'login', { message: message } );
@@ -489,6 +508,37 @@ app.post( '/trade', function( req, res ){
     }else{
       //console.log( item1 );
       res.write( JSON.stringify( item1, 2, null ) );
+      res.end();
+    }
+  });
+});
+
+app.get( '/transactions', function( req, res ){
+  var token = req.session.token; //req.body.token;
+  var limit = ( req.query.limit ? req.query.limit : 0 );
+  var skip = ( req.query.skip ? req.query.skip : 0 );
+
+  var json1 = { token: token };
+  if( limit ){ json1['limit'] = limit; }
+  if( skip ){ json1['skip'] = skip; }
+  var options1 = {
+    url: settings.api_url + '/transactions',
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    json: json1
+  };
+  request( options1, ( err1, res1, transactions1 ) => {
+    res.contentType( 'application/json' );
+    if( err1 ){
+      console.log( err1 );
+      res.status( 403 );
+      res.write( JSON.stringify( err1, 2, null ) );
+      res.end();
+    }else{
+      //console.log( transactions1 );
+      res.write( JSON.stringify( transactions1, 2, null ) );
       res.end();
     }
   });
