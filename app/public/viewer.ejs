@@ -1,5 +1,9 @@
 <%- include('./header', {}) %>
 
+<link href="//cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css" rel="stylesheet"/>
+<link href="//cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.css" rel="stylesheet"/>
+<script src="//cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+
 <title><%= __('viewer.head.title') %></title>
 <script>
 $(function(){
@@ -7,6 +11,7 @@ $(function(){
 });
 
 function getTransactions(){
+  $('.blocks').html( '' );
   var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
   $.ajax({
     type: 'GET',
@@ -15,9 +20,15 @@ function getTransactions(){
       obj.remove();
       //console.log( result );
       var transactions = result.result;
+      console.log( '#transactions = ' + transactions.length );
       for( var i = 0; i < transactions.length; i ++ ){
         var transaction = transactions[i];
 
+        //var li = "<li>" + JSON.stringify( transaction, 2, null ) + "</li>";
+        var li = "<li>" + transaction.transactionTimestamp + "</li>";
+        $('.blocks').append( li );
+
+        /*
         //. Add Indicator
         var li = "<li data-target='#carousel-example-generic' data-slide-to='" + i + "' id='indicator-for-" + transaction.transactionId + "'></li>";
         $('#carousel-indicators').append( li );
@@ -37,7 +48,22 @@ function getTransactions(){
           $('#indicator-for-' + transaction.transactionId).addClass( 'active' );
           $('#item-for-' + transaction.transactionId).addClass( 'active' );
         }
+        */
       }
+
+      $('.blocks').slick({
+        accessibility: true,
+        centerMode: true,
+        centerPadding: '60px',
+        slidesToShow: 5,
+        slidesToScroll: 1,
+        dots: true,
+        //dotsClass: 'dot-class',
+        arrows: true,
+        adaptiveHeight: true,
+        initialSlide: transactions.length - 3,
+        infinite: false
+      });
     },
     error: function( err ){
       obj.remove();
@@ -45,84 +71,12 @@ function getTransactions(){
     }
   });
 }
-/*
-function getTransactions(){
-  $.ajax({
-    type: 'GET',
-    url: '/transactions',
-    success: function( result ){
-      result = JSON.parse( result );
-      for( var i = 0; i < result.transactions.length; i ++ ){
-        var transaction = result.transactions[i];
-
-        //. Add Indicator
-        var li = "<li data-target='#carousel-example-generic' data-slide-to='" + i + "' id='indicator-for-" + transaction.transactionId + "'></li>";
-        $('#carousel-indicators').append( li );
-
-        //. Add Inner
-        var div = "<div class='item' id='item-for-" + transaction.transactionId + "'>"
-          + "<div style='background:#333; color:#fff'>"
-          + "<div><pre id='pre-for-" + transaction.transactionId + "'>" + JSON.stringify( transaction, null, 2 ) + "</pre></div>"
-          + "</div>"
-          + "<div class='carousel-caption'>"
-          + transaction.transactionId + " (" + transaction.timestamp + ")"
-          + "</div>"
-          + "</div>";
-        $('#carousel-inner').append( div );
-
-        if( i == result.transactions.length - 1 ){
-          $('#indicator-for-' + transaction.transactionId).addClass( 'active' );
-          $('#item-for-' + transaction.transactionId).addClass( 'active' );
-        }
-
-        getTransaction( transaction.transactionId, transaction.type );
-      }
-    },
-    error: function( err ){
-      console.log( err );
-    }
-  });
-}
-*/
 </script>
-<style>
-html, body, {
-  background-color: #ddddff;
-  height: 100%;
-  margin: 0px;
-  padding: 0px
-}
-tr{
-  cursor: pointer;
-}
-tr:hover{
-  background: #ccc;
-}
-</style>
 </head>
 <body>
 
-<%- include('./nav', {}) %>
-
-<div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
-  <!-- Indicators -->
-  <ol class="carousel-indicators" id="carousel-indicators">
-  </ol>
-
-  <!-- Wrapper for slides -->
-  <div class="carousel-inner" role="listbox" id="carousel-inner">
-  </div>
-
-  <!-- Controls -->
-  <a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
-    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
-    <span class="sr-only">Previous</span>
-  </a>
-  <a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
-    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-    <span class="sr-only">Next</span>
-  </a>
-</div>
+<ul id="blocks" class="blocks">
+</ul>
 
 </body>
 </html>

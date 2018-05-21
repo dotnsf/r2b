@@ -111,21 +111,7 @@ app.get( '/admin', function( req, res ){
 });
 
 app.get( '/viewer', function( req, res ){
-  if( req.session && req.session.token ){
-    //. トークンをデコード
-    var token = req.session.token;
-    jwt.verify( token, app.get('superSecret'), function( err, user ){
-      if( err ){
-        res.redirect( '/' );
-      }else if( user && user.id ){
-        res.render( 'viewer', { user: user } );
-      }else{
-        res.redirect( '/' );
-      }
-    });
-  }else{
-    res.redirect( '/' );
-  }
+  res.render( 'viewer', {} );
 });
 
 

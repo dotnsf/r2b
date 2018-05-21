@@ -347,11 +347,6 @@ paths:
       description: Get all transactions which can be retrieved from currrent token.
       produces:
         - application/json
-      parameters:
-        - name: token
-          type: string
-          in: query
-          description: token which is retrieved from response of login API.
       responses:
         '200':
           description: Success

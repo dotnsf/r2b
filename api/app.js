@@ -166,6 +166,19 @@ apiRoutes.post( '/itemCheck', function( req, res ){
   }
 });
 
+apiRoutes.get( '/transactions', function( req, res ){
+  res.contentType( 'application/json' );
+
+  client.getAllHistorianRecords( records => {
+    res.write( JSON.stringify( { status: true, result: records }, 2, null ) );
+    res.end();
+  }, error => {
+    res.status( 500 );
+    res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
+    res.end();
+  });
+});
+
 //. ここより上で定義する API には認証フィルタをかけない
 //. ここより下で定義する API には認証フィルタをかける
 apiRoutes.use( function( req, res, next ){
@@ -1027,68 +1040,7 @@ apiRoutes.post( '/trade', function( req, res ){
 });
 
 
-apiRoutes.get( '/transactions', function( req, res ){
-  res.contentType( 'application/json' );
-  var token = req.body.token || req.query.token || req.headers['x-access-token'];
-  if( !token ){
-    res.write( JSON.stringify( { status: false, result: 'No token provided.' }, 2, null ) );
-    res.end();
-  }else{
-    //. トークンをデコード
-    jwt.verify( token, app.get( 'superSecret' ), function( err, user ){
-      if( err ){
-        res.status( 401 );
-        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
-        res.end();
-      }else if( user && user.id ){
-        client.getAllHistorianRecords( records => {
-          res.write( JSON.stringify( { status: true, result: records }, 2, null ) );
-          res.end();
-        }, error => {
-          res.status( 500 );
-          res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
-          res.end();
-        });
-      }else{
-        res.status( 401 );
-        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
-        res.end();
-      }
-    });
-  }
-});
 
-apiRoutes.get( '/transaction', function( req, res ){
-  res.contentType( 'application/json' );
-  var token = req.body.token || req.query.token || req.headers['x-access-token'];
-  if( !token ){
-    res.write( JSON.stringify( { status: false, result: 'No token provided.' }, 2, null ) );
-    res.end();
-  }else{
-    //. トークンをデコード
-    jwt.verify( token, app.get( 'superSecret' ), function( err, user ){
-      if( err ){
-        res.status( 401 );
-        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
-        res.end();
-      }else if( user && user.id ){
-        var id = req.query.id;
-        client.getTransactionById( id, transaction => {
-          res.write( JSON.stringify( { status: true, result: transaction }, 2, null ) );
-          res.end();
-        }, error => {
-          res.status( 500 );
-          res.write( JSON.stringify( { status: false, result: error }, 2, null ) );
-          res.end();
-        });
-      }else{
-        res.status( 401 );
-        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
-        res.end();
-      }
-    });
-  }
-});
 
 
 function hasCommonType( user1, user2 ){

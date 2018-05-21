@@ -47,11 +47,9 @@ R2B supports simple CRUD API for User. It also support Creating API for Item, an
 
     - `$ composer card import --file PeerAdmin@hlfv1.card`
 
-- (Once)Import BNC for admin@r2b-network
+- cd to api folder
 
     - `$ cd **/r2b/api`
-
-    - `$ composer card import --file cards/admin@r2b-network.card`
 
 - (Everytime after starting Hyperledger Fabric)Install r2b-network runtime
 
@@ -60,6 +58,10 @@ R2B supports simple CRUD API for User. It also support Creating API for Item, an
 - (Everytime after starting Hyperledger Fabric)Start r2b-network with BNA
 
     - `$ composer network start --card PeerAdmin@hlfv1 --networkAdmin admin --networkAdminEnrollSecret adminpw --archiveFile r2b-network.bna --file cards/admin@r2b-network.card`
+
+- (Once)Import BNC for admin@r2b-network
+
+    - `$ composer card import --file cards/admin@r2b-network.card`
 
 - (Everytime after starting Hyperledger Fabric)Ping to Business Network with admin@r2b-network(for confirmation)
 
